@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 
 namespace Zing\Flysystem\Obs\Plugins;
 
@@ -22,11 +23,13 @@ class SignUrl extends AbstractPlugin
      *
      * @param $path
      * @param $timeout
+     * @param mixed $method
      *
      * @return mixed
      */
     public function handle($path, $timeout, array $options = [], $method = 'GET')
     {
-        return $this->filesystem->getAdapter()->signUrl($path, $timeout, $options, $method);
+        return $this->filesystem->getAdapter()
+            ->signUrl($path, $timeout, $options, $method);
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Zing\Flysystem\Obs\Plugins;
 
 use League\Flysystem\Plugin\AbstractPlugin;
@@ -25,6 +27,7 @@ class SetBucket extends AbstractPlugin
      */
     public function handle($bucket)
     {
-        return $this->filesystem->getAdapter()->bucket($bucket);
+        return $this->filesystem->getAdapter()
+            ->bucket($bucket);
     }
 }

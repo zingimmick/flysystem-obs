@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Zing\Flysystem\Obs\Plugins;
 
 use League\Flysystem\Plugin\AbstractPlugin;
@@ -20,16 +22,24 @@ class SignatureConfig extends AbstractPlugin
      * handle.
      *
      * @param string $prefix
-     * @param null   $callBackUrl
-     * @param array  $customData
-     * @param int    $expire
-     * @param int    $contentLengthRangeValue
-     * @param array  $systemData
+     * @param null $callBackUrl
+     * @param array $customData
+     * @param int $expire
+     * @param int $contentLengthRangeValue
+     * @param array $systemData
      *
      * @return mixed
      */
-    public function handle($prefix = '', $callBackUrl = null, $customData = [], $expire = 30, $contentLengthRangeValue = 1048576000, $systemData = [])
+    public function handle(
+        $prefix = '',
+        $callBackUrl = null,
+        $customData = [],
+        $expire = 30,
+        $contentLengthRangeValue = 1048576000,
+        $systemData = [
+    ])
     {
-        return $this->filesystem->getAdapter()->signatureConfig($prefix, $callBackUrl, $customData, $expire, $contentLengthRangeValue, $systemData);
+        return $this->filesystem->getAdapter()
+            ->signatureConfig($prefix, $callBackUrl, $customData, $expire, $contentLengthRangeValue, $systemData);
     }
 }

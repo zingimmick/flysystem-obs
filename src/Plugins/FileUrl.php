@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 
 namespace Zing\Flysystem\Obs\Plugins;
 
@@ -26,6 +27,7 @@ class FileUrl extends AbstractPlugin
      */
     public function handle($path)
     {
-        return $this->filesystem->getAdapter()->getUrl($path);
+        return $this->filesystem->getAdapter()
+            ->getUrl($path);
     }
 }

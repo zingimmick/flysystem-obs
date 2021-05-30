@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 
 namespace Zing\Flysystem\Obs;
 
@@ -11,6 +12,8 @@ use Obs\ObsException;
 
 class ObsAdapter extends AbstractAdapter
 {
+    public const PUBLIC_GRANT_URI = 'http://acs.amazonaws.com/groups/global/AllUsers';
+
     /**
      * @var
      */
@@ -25,11 +28,11 @@ class ObsAdapter extends AbstractAdapter
      * @var
      */
     protected $isCName;
+
     /**
      * @var \Obs\ObsClient
      */
     protected $client;
-
 
     /**
      * @var bool
@@ -42,7 +45,6 @@ class ObsAdapter extends AbstractAdapter
     protected $cdnUrl;
 
     /**
-     *
      * @param \Obs\ObsClient $client
      * @param string $endpoint
      * @param string $bucket
@@ -72,9 +74,9 @@ class ObsAdapter extends AbstractAdapter
     /**
      * Set the S3Client bucket.
      *
-     * @return void
+     * @param mixed $bucket
      */
-    public function setBucket($bucket)
+    public function setBucket($bucket): void
     {
         $this->bucket = $bucket;
     }
@@ -82,7 +84,7 @@ class ObsAdapter extends AbstractAdapter
     /**
      * Get the S3Client instance.
      *
-     * @return ObsClient
+     * @return \Obs\ObsClient
      */
     public function getClient()
     {
@@ -168,8 +170,8 @@ class ObsAdapter extends AbstractAdapter
      * @param string $newpath
      *
      * @throws \Obs\ObsException
-     * @return bool
      *
+     * @return bool
      */
     public function rename($path, $newpath)
     {
@@ -213,8 +215,8 @@ class ObsAdapter extends AbstractAdapter
      * @param string $path
      *
      * @throws \Obs\ObsException
-     * @return bool
      *
+     * @return bool
      */
     public function delete($path)
     {
@@ -222,7 +224,8 @@ class ObsAdapter extends AbstractAdapter
 
         try {
             $this->client->deleteObject([
-                'Bucket' => $this->bucket, 'Key' => $path,
+                'Bucket' => $this->bucket,
+                'Key' => $path,
             ]);
         } catch (ObsException $obsException) {
             return false;
@@ -237,8 +240,8 @@ class ObsAdapter extends AbstractAdapter
      * @param string $dirname
      *
      * @throws \Obs\ObsException
-     * @return bool
      *
+     * @return bool
      */
     public function deleteDir($dirname)
     {
@@ -274,7 +277,7 @@ class ObsAdapter extends AbstractAdapter
      */
     public function setVisibility($path, $visibility)
     {
-        $acl = $visibility ===AdapterInterface::VISIBILITY_PUBLIC  ? ObsClient::AclPublicRead : ObsClient::AclPrivate;
+        $acl = $visibility === AdapterInterface::VISIBILITY_PUBLIC ? ObsClient::AclPublicRead : ObsClient::AclPrivate;
 
         try {
             $this->client->setObjectAcl([
@@ -286,7 +289,10 @@ class ObsAdapter extends AbstractAdapter
             return false;
         }
 
-        return compact('visibility', 'path');
+        return [
+            'visibility' => $visibility,
+            'path' => $path,
+        ];
     }
 
     /**
@@ -303,10 +309,11 @@ class ObsAdapter extends AbstractAdapter
         } catch (ObsException $obsException) {
             return false;
         }
-        return ['visibility' => $visibility];
-    }
 
-    public const PUBLIC_GRANT_URI = 'http://acs.amazonaws.com/groups/global/AllUsers';
+        return [
+            'visibility' => $visibility,
+        ];
+    }
 
     /**
      * Get the object acl presented as a visibility.
@@ -324,20 +331,17 @@ class ObsAdapter extends AbstractAdapter
             ]
         );
 
-        $visibility = AdapterInterface::VISIBILITY_PRIVATE;
-
         foreach ($model['Grants'] as $grant) {
             if (
                 isset($grant['Grantee']['URI'])
                 && $grant['Grantee']['URI'] === self::PUBLIC_GRANT_URI
                 && $grant['Permission'] === 'READ'
             ) {
-                $visibility = AdapterInterface::VISIBILITY_PUBLIC;
-                break;
+                return AdapterInterface::VISIBILITY_PUBLIC;
             }
         }
 
-        return $visibility;
+        return AdapterInterface::VISIBILITY_PRIVATE;
     }
 
     /**
@@ -351,7 +355,6 @@ class ObsAdapter extends AbstractAdapter
     {
         return $this->getMetadata($path);
     }
-
 
     /**
      * read a file.
@@ -368,7 +371,10 @@ class ObsAdapter extends AbstractAdapter
             return false;
         }
 
-        return compact('contents', 'path');
+        return [
+            'contents' => $contents,
+            'path' => $path,
+        ];
     }
 
     /**
@@ -388,7 +394,10 @@ class ObsAdapter extends AbstractAdapter
             return false;
         }
 
-        return compact('stream', 'path');
+        return [
+            'stream' => $stream,
+            'path' => $path,
+        ];
     }
 
     /**
@@ -398,13 +407,13 @@ class ObsAdapter extends AbstractAdapter
      * @param bool $recursive
      *
      * @throws \Obs\ObsException
-     * @return array
      *
+     * @return array
      */
     public function listContents($directory = '', $recursive = false)
     {
         $list = [];
-        $directory = '/' === substr($directory, -1) ? $directory : $directory . '/';
+        $directory = substr($directory, -1) === '/' ? $directory : $directory . '/';
         $result = $this->listDirObjects($directory, $recursive);
 
         foreach ($result['objects'] as $files) {
@@ -437,7 +446,8 @@ class ObsAdapter extends AbstractAdapter
 
         try {
             $metadata = $this->client->getObjectMetadata([
-                'Bucket' => $this->bucket, 'Key' => $path,
+                'Bucket' => $this->bucket,
+                'Key' => $path,
             ]);
         } catch (ObsException $exception) {
             return false;
@@ -448,6 +458,7 @@ class ObsAdapter extends AbstractAdapter
                 'path' => rtrim($this->removePathPrefix($path), '/'),
             ];
         }
+
         return [
             'type' => 'file',
             'mimetype' => $metadata['ContentType'],
@@ -494,7 +505,7 @@ class ObsAdapter extends AbstractAdapter
     }
 
     /**
-     * Check if the path contains only directories
+     * Check if the path contains only directories.
      *
      * @param string $path
      *
@@ -516,12 +527,13 @@ class ObsAdapter extends AbstractAdapter
     {
         $path = $this->applyPathPrefix($path);
 
-        if (! is_null($this->cdnUrl)) {
+        if (null !== $this->cdnUrl) {
             return rtrim($this->cdnUrl, '/') . '/' . ltrim($path, '/');
         }
 
         return $this->normalizeHost() . ltrim($path, '/');
     }
+
     /**
      * normalize Host.
      *
@@ -529,17 +541,9 @@ class ObsAdapter extends AbstractAdapter
      */
     protected function normalizeHost()
     {
-        if ($this->isCName) {
-            $domain = $this->endpoint;
-        } else {
-            $domain = $this->bucket . '.' . $this->endpoint;
-        }
+        $domain = $this->isCName ? $this->endpoint : $this->bucket . '.' . $this->endpoint;
 
-        if ($this->useSSL) {
-            $domain = "https://{$domain}";
-        } else {
-            $domain = "http://{$domain}";
-        }
+        $domain = $this->useSSL ? "https://{$domain}" : "http://{$domain}";
 
         return rtrim($domain, '/') . '/';
     }
@@ -547,12 +551,12 @@ class ObsAdapter extends AbstractAdapter
     /**
      * Check the endpoint to see if SSL can be used.
      */
-    protected function checkEndpoint()
+    protected function checkEndpoint(): void
     {
-        if (0 === strpos($this->endpoint, 'http://')) {
+        if (strpos($this->endpoint, 'http://') === 0) {
             $this->endpoint = substr($this->endpoint, strlen('http://'));
             $this->useSSL = false;
-        } elseif (0 === strpos($this->endpoint, 'https://')) {
+        } elseif (strpos($this->endpoint, 'https://') === 0) {
             $this->endpoint = substr($this->endpoint, strlen('https://'));
             $this->useSSL = true;
         }
@@ -569,8 +573,9 @@ class ObsAdapter extends AbstractAdapter
     {
         $path = $this->applyPathPrefix($path);
 
-        $model= $this->client->getObject([
-            'Bucket' => $this->bucket, 'Key' => $path,
+        $model = $this->client->getObject([
+            'Bucket' => $this->bucket,
+            'Key' => $path,
         ]);
 
         return $model['Body'];
@@ -583,8 +588,8 @@ class ObsAdapter extends AbstractAdapter
      * @param bool $recursive
      *
      * @throws \Obs\ObsException
-     * @return array
      *
+     * @return array
      */
     public function listDirObjects($dirname = '', $recursive = false)
     {
@@ -603,18 +608,16 @@ class ObsAdapter extends AbstractAdapter
                 'Marker' => $nextMarker,
             ];
 
-            try {
-                $model = $this->client->listObjects($options);
-            } catch (ObsException $exception) {
-                throw $exception;
-            }
+            $model = $this->client->listObjects($options);
 
             $nextMarker = $model['NextMarker'];
             $objects = $model['Contents'];
             $prefixes = $model['CommonPrefixes'];
             if (! empty($objects)) {
                 foreach ($objects as $object) {
-                    $result['objects'][] = array_merge($object,['Prefix'=>$dirname]);
+                    $result['objects'][] = array_merge($object, [
+                        'Prefix' => $dirname,
+                    ]);
                 }
             } else {
                 $result['objects'] = [];
@@ -636,10 +639,10 @@ class ObsAdapter extends AbstractAdapter
                 }
             }
 
-            if ('' === $nextMarker) {
+            if ($nextMarker === '') {
                 break;
             }
-        }
+        }//end while
 
         return $result;
     }
@@ -649,7 +652,7 @@ class ObsAdapter extends AbstractAdapter
      *
      * @param string|null $url
      */
-    public function setCdnUrl($url)
+    public function setCdnUrl($url): void
     {
         $this->cdnUrl = $url;
     }
@@ -665,14 +668,22 @@ class ObsAdapter extends AbstractAdapter
      * @param array $systemData
      *
      * @throws \Exception
-     * @return false|array
      *
+     * @return false|array
      */
-    public function signatureConfig($prefix = '', $callBackUrl = null, $customData = [], $expire = 30, $contentLengthRangeValue = 1048576000, $systemData = [])
+    public function signatureConfig(
+        $prefix = '',
+        $callBackUrl = null,
+        $customData = [],
+        $expire = 30,
+        $contentLengthRangeValue = 1048576000,
+        $systemData = [
+    ])
     {
         if (! empty($prefix)) {
             $prefix = ltrim($prefix, '/');
         }
+
         return $this->client->createPostSignature([
             'Bucket' => $this->bucket,
             'Key' => $prefix,
@@ -685,6 +696,7 @@ class ObsAdapter extends AbstractAdapter
      *
      * @param $path
      * @param $timeout
+     * @param mixed $method
      *
      * @return bool|string
      */
@@ -698,7 +710,7 @@ class ObsAdapter extends AbstractAdapter
                 'Bucket' => $this->bucket,
                 'Key' => $path,
                 'Expires' => $timeout,
-            ],$options));
+            ], $options));
         } catch (ObsException $exception) {
             return false;
         }
@@ -711,6 +723,7 @@ class ObsAdapter extends AbstractAdapter
      *
      * @param $path
      * @param $expiration
+     * @param mixed $method
      *
      * @return bool|string
      */

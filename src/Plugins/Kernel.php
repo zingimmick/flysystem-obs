@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Zing\Flysystem\Obs\Plugins;
 
 use League\Flysystem\Plugin\AbstractPlugin;
@@ -19,6 +21,7 @@ class Kernel extends AbstractPlugin
      */
     public function handle()
     {
-        return $this->filesystem->getAdapter()->getClient();
+        return $this->filesystem->getAdapter()
+            ->getClient();
     }
 }
