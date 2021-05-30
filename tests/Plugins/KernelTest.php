@@ -1,8 +1,8 @@
 <?php
 
+declare(strict_types=1);
 
 namespace Zing\Flysystem\Obs\Tests\Plugins;
-
 
 use League\Flysystem\Filesystem;
 use Mockery;
@@ -13,11 +13,13 @@ use Zing\Flysystem\Obs\Tests\TestCase;
 
 class KernelTest extends TestCase
 {
-
-    public function testKernel()
+    public function testKernel(): void
     {
         $adapter = Mockery::mock(ObsAdapter::class);
-        $adapter->shouldReceive('getClient')->withNoArgs()->once()->andReturn(Mockery::mock(ObsClient::class));
+        $adapter->shouldReceive('getClient')
+            ->withNoArgs()
+            ->once()
+            ->andReturn(Mockery::mock(ObsClient::class));
         $filesystem = new Filesystem($adapter);
         $filesystem->addPlugin(new Kernel());
         self::assertInstanceOf(ObsClient::class, $filesystem->kernel());

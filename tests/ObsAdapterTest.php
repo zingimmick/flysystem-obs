@@ -38,7 +38,7 @@ class ObsAdapterTest extends TestCase
         self::assertFalse($obsAdapter->setVisibility('11', AdapterInterface::VISIBILITY_PUBLIC));
         self::assertFalse($obsAdapter->getVisibility('11'));
         self::assertFalse($obsAdapter->getSize('11'));
-        self::assertFalse($obsAdapter->signUrl('11',10,[],null));
+        self::assertFalse($obsAdapter->signUrl('11', 10, [], null));
         self::assertFalse($obsAdapter->getMimetype('11'));
         self::assertFalse($obsAdapter->getTimestamp('11'));
         self::assertFalse($obsAdapter->delete('11'));
@@ -52,6 +52,6 @@ class ObsAdapterTest extends TestCase
         $filesystem->addPlugin(new SignatureConfig());
         $filesystem->addPlugin(new SignUrl());
         $filesystem->addPlugin(new TemporaryUrl());
-        self::assertInstanceOf(ObsClient::class,$filesystem->kernel());
+        self::assertInstanceOf(ObsClient::class, $filesystem->kernel());
     }
 }

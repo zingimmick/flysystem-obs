@@ -1,8 +1,8 @@
 <?php
 
+declare(strict_types=1);
 
 namespace Zing\Flysystem\Obs\Tests\Plugins;
-
 
 use League\Flysystem\Filesystem;
 use Mockery;
@@ -15,9 +15,10 @@ class FileUrlTest extends TestCase
     public function testGetUrl(): void
     {
         $adapter = Mockery::mock(ObsAdapter::class);
-        $adapter->shouldReceive('getUrl')->withArgs(['test'])->once()->andReturn('test-url');
+        $adapter->shouldReceive('getUrl')
+            ->withArgs(['test'])->once()->andReturn('test-url');
         $filesystem = new Filesystem($adapter);
         $filesystem->addPlugin(new FileUrl());
-        self::assertEquals('test-url', $filesystem->getUrl('test'));
+        self::assertSame('test-url', $filesystem->getUrl('test'));
     }
 }

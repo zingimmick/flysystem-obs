@@ -27,13 +27,12 @@ class ObsAdapter extends AbstractAdapter
     /**
      * @var array
      */
-    protected $options;
+    protected $options = [];
 
     /**
      * @var \Obs\ObsClient
      */
     protected $client;
-
 
     /**
      * @param \Obs\ObsClient $client
