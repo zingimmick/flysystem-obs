@@ -4,7 +4,6 @@
 namespace Zing\Flysystem\Obs;
 
 use League\Flysystem\Adapter\AbstractAdapter;
-use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
 use League\Flysystem\AdapterInterface;
 use League\Flysystem\Config;
 use Obs\ObsClient;
@@ -12,7 +11,6 @@ use Obs\ObsException;
 
 class ObsAdapter extends AbstractAdapter
 {
-    use NotSupportingVisibilityTrait;
     /**
      * @var
      */
@@ -109,11 +107,15 @@ class ObsAdapter extends AbstractAdapter
             $options = $config->get('options');
         }
 
-        $this->client->putObject([
-            'Bucket' => $this->bucket,
-            'Key' => $path,
-            'Body' => $contents,
-        ]);
+        try {
+            $this->client->putObject(array_merge($options, [
+                'Bucket' => $this->bucket,
+                'Key' => $path,
+                'Body' => $contents,
+            ]));
+        } catch (ObsException $obsException) {
+            return false;
+        }
 
         return true;
     }
@@ -257,9 +259,9 @@ class ObsAdapter extends AbstractAdapter
      */
     public function createDir($dirname, Config $config)
     {
-        $defaultFile = trim($dirname, '/') . '/obs.txt';
+        $defaultFile = trim($dirname, '/') . '/';
 
-        return $this->write($defaultFile, '当虚拟目录下有其他文件时，可删除此文件~', $config);
+        return $this->write($defaultFile, null, $config);
     }
 
     /**
@@ -284,7 +286,58 @@ class ObsAdapter extends AbstractAdapter
             return false;
         }
 
-        return compact('visibility','path');
+        return compact('visibility', 'path');
+    }
+
+    /**
+     * Get the visibility of a file.
+     *
+     * @param string $path
+     *
+     * @return array|false
+     */
+    public function getVisibility($path)
+    {
+        try {
+            $visibility = $this->getRawVisibility($path);
+        } catch (ObsException $obsException) {
+            return false;
+        }
+        return ['visibility' => $visibility];
+    }
+
+    public const PUBLIC_GRANT_URI = 'http://acs.amazonaws.com/groups/global/AllUsers';
+
+    /**
+     * Get the object acl presented as a visibility.
+     *
+     * @param string $path
+     *
+     * @return string
+     */
+    protected function getRawVisibility($path)
+    {
+        $model = $this->client->getObjectAcl(
+            [
+                'Bucket' => $this->bucket,
+                'Key' => $this->applyPathPrefix($path),
+            ]
+        );
+
+        $visibility = AdapterInterface::VISIBILITY_PRIVATE;
+
+        foreach ($model['Grants'] as $grant) {
+            if (
+                isset($grant['Grantee']['URI'])
+                && $grant['Grantee']['URI'] === self::PUBLIC_GRANT_URI
+                && $grant['Permission'] === 'READ'
+            ) {
+                $visibility = AdapterInterface::VISIBILITY_PUBLIC;
+                break;
+            }
+        }
+
+        return $visibility;
     }
 
     /**
@@ -355,7 +408,7 @@ class ObsAdapter extends AbstractAdapter
         $result = $this->listDirObjects($directory, $recursive);
 
         foreach ($result['objects'] as $files) {
-            if ('obs.txt' === substr($files['Key'], -7) || ! $fileInfo = $this->getMetadata($files['Key'])) {
+            if (! $fileInfo = $this->getMetadata($files['Key'])) {
                 continue;
             }
             $list[] = $fileInfo;
@@ -389,12 +442,17 @@ class ObsAdapter extends AbstractAdapter
         } catch (ObsException $exception) {
             return false;
         }
-
+        if ($this->isOnlyDir($this->removePathPrefix($path))) {
+            return [
+                'type' => 'dir',
+                'path' => rtrim($this->removePathPrefix($path), '/'),
+            ];
+        }
         return [
             'type' => 'file',
             'mimetype' => $metadata['ContentType'],
             'path' => $this->removePathPrefix($path),
-            'timestamp' => $metadata['LastModified'],
+            'timestamp' => strtotime($metadata['LastModified']),
             'size' => $metadata['ContentLength'],
         ];
     }
@@ -433,6 +491,18 @@ class ObsAdapter extends AbstractAdapter
     public function getTimestamp($path)
     {
         return $this->getMetadata($path);
+    }
+
+    /**
+     * Check if the path contains only directories
+     *
+     * @param string $path
+     *
+     * @return bool
+     */
+    private function isOnlyDir($path)
+    {
+        return substr($path, -1) === '/';
     }
 
     /**
@@ -503,7 +573,7 @@ class ObsAdapter extends AbstractAdapter
             'Bucket' => $this->bucket, 'Key' => $path,
         ]);
 
-        return  $model['Body'];
+        return $model['Body'];
     }
 
     /**
@@ -520,7 +590,7 @@ class ObsAdapter extends AbstractAdapter
     {
         $delimiter = '/';
         $nextMarker = '';
-        $maxkeys = 1000;
+        $maxKeys = 1000;
 
         $result = [];
 
@@ -529,7 +599,7 @@ class ObsAdapter extends AbstractAdapter
                 'Bucket' => $this->bucket,
                 'Delimiter' => $delimiter,
                 'Prefix' => $dirname,
-                'MaxKeys' => $maxkeys,
+                'MaxKeys' => $maxKeys,
                 'Marker' => $nextMarker,
             ];
 
@@ -542,7 +612,6 @@ class ObsAdapter extends AbstractAdapter
             $nextMarker = $model['NextMarker'];
             $objects = $model['Contents'];
             $prefixes = $model['CommonPrefixes'];
-
             if (! empty($objects)) {
                 foreach ($objects as $object) {
                     $result['objects'][] = array_merge($object,['Prefix'=>$dirname]);
