@@ -28,6 +28,6 @@ class SetBucket extends AbstractPlugin
     public function handle($bucket)
     {
         return $this->filesystem->getAdapter()
-            ->bucket($bucket);
+            ->setBucket($bucket);
     }
 }

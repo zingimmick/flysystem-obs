@@ -22,7 +22,8 @@ class TemporaryUrl extends AbstractPlugin
      * handle.
      *
      * @param string $path
-     * @param int $expiration
+     * @param int $timeout
+     * @param array $options
      * @param mixed $method
      *
      * @return mixed
