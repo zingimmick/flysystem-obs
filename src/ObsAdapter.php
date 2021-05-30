@@ -15,17 +15,17 @@ class ObsAdapter extends AbstractAdapter
     public const PUBLIC_GRANT_URI = 'http://acs.amazonaws.com/groups/global/AllUsers';
 
     /**
-     * @var
+     * @var string
      */
     protected $endpoint;
 
     /**
-     * @var
+     * @var string
      */
     protected $bucket;
 
     /**
-     * @var
+     * @var array
      */
     protected $options;
 
@@ -710,14 +710,14 @@ class ObsAdapter extends AbstractAdapter
     /**
      * temporary file url.
      *
-     * @param $path
-     * @param $expiration
+     * @param string $path
+     * @param int $timeout
      * @param mixed $method
      *
      * @return bool|string
      */
-    public function getTemporaryUrl($path, $expiration, array $options = [], $method = 'GET')
+    public function getTemporaryUrl($path, $timeout, array $options = [], $method = 'GET')
     {
-        return $this->signUrl($path, Carbon::now()->diffInSeconds($expiration), $options, $method);
+        return $this->signUrl($path, $timeout, $options, $method);
     }
 }
