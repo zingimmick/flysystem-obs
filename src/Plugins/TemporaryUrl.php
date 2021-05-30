@@ -25,6 +25,7 @@ class TemporaryUrl extends AbstractPlugin
      * @param int $timeout
      * @param array $options
      * @param mixed $method
+     *
      * @return mixed
      */
     public function handle($path, $timeout, array $options = [], $method = 'GET')
