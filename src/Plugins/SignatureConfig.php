@@ -36,9 +36,8 @@ class SignatureConfig extends AbstractPlugin
         $customData = [],
         $expire = 30,
         $contentLengthRangeValue = 1048576000,
-        $systemData = [
-    ])
-    {
+        $systemData = []
+    ) {
         return $this->filesystem->getAdapter()
             ->signatureConfig($prefix, $callBackUrl, $customData, $expire, $contentLengthRangeValue, $systemData);
     }

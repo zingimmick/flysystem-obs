@@ -27,7 +27,7 @@ class ObsAdapter extends AbstractAdapter
     /**
      * @var
      */
-    protected $isCName;
+    protected $options;
 
     /**
      * @var \Obs\ObsClient
@@ -40,23 +40,18 @@ class ObsAdapter extends AbstractAdapter
     protected $useSSL = false;
 
     /**
-     * @var string|null
-     */
-    protected $cdnUrl;
-
-    /**
      * @param \Obs\ObsClient $client
      * @param string $endpoint
      * @param string $bucket
-     * @param bool $isCName
      * @param string $prefix
+     * @param array $options
      */
-    public function __construct(ObsClient $client, string $endpoint, string $bucket, $isCName = false, $prefix = '')
+    public function __construct(ObsClient $client, string $endpoint, string $bucket, $prefix = '', array $options = [])
     {
         $this->client = $client;
         $this->endpoint = $endpoint;
         $this->bucket = $bucket;
-        $this->isCName = $isCName;
+        $this->options = $options;
         $this->setPathPrefix($prefix);
         $this->checkEndpoint();
     }
@@ -332,13 +327,17 @@ class ObsAdapter extends AbstractAdapter
         );
 
         foreach ($model['Grants'] as $grant) {
-            if (
-                isset($grant['Grantee']['URI'])
-                && $grant['Grantee']['URI'] === self::PUBLIC_GRANT_URI
-                && $grant['Permission'] === 'READ'
-            ) {
-                return AdapterInterface::VISIBILITY_PUBLIC;
+            if (! isset($grant['Grantee']['URI'])) {
+                continue;
             }
+            if ($grant['Grantee']['URI'] !== self::PUBLIC_GRANT_URI) {
+                continue;
+            }
+            if ($grant['Permission'] !== 'READ') {
+                continue;
+            }
+
+            return AdapterInterface::VISIBILITY_PUBLIC;
         }
 
         return AdapterInterface::VISIBILITY_PRIVATE;
@@ -417,10 +416,11 @@ class ObsAdapter extends AbstractAdapter
         $result = $this->listDirObjects($directory, $recursive);
 
         foreach ($result['objects'] as $files) {
-            if (! $fileInfo = $this->getMetadata($files['Key'])) {
+            $metadata = $this->getMetadata($files['Key']);
+            if ($metadata === false) {
                 continue;
             }
-            $list[] = $fileInfo;
+            $list[] = $metadata;
         }
 
         foreach ($result['prefix'] as $dir) {
@@ -527,8 +527,8 @@ class ObsAdapter extends AbstractAdapter
     {
         $path = $this->applyPathPrefix($path);
 
-        if (null !== $this->cdnUrl) {
-            return rtrim($this->cdnUrl, '/') . '/' . ltrim($path, '/');
+        if (isset($this->options['cdn'])&&$this->options['cdn'] !== null) {
+            return rtrim($this->options['cdn'], '/') . '/' . ltrim($path, '/');
         }
 
         return $this->normalizeHost() . ltrim($path, '/');
@@ -541,7 +541,7 @@ class ObsAdapter extends AbstractAdapter
      */
     protected function normalizeHost()
     {
-        $domain = $this->isCName ? $this->endpoint : $this->bucket . '.' . $this->endpoint;
+        $domain = isset($this->options['isCName']) && $this->options['isCName'] ? $this->endpoint : $this->bucket . '.' . $this->endpoint;
 
         $domain = $this->useSSL ? "https://{$domain}" : "http://{$domain}";
 
@@ -648,16 +648,6 @@ class ObsAdapter extends AbstractAdapter
     }
 
     /**
-     * 设置cdn的url.
-     *
-     * @param string|null $url
-     */
-    public function setCdnUrl($url): void
-    {
-        $this->cdnUrl = $url;
-    }
-
-    /**
      * 获取直传配置.
      *
      * @param string $prefix
@@ -677,9 +667,8 @@ class ObsAdapter extends AbstractAdapter
         $customData = [],
         $expire = 30,
         $contentLengthRangeValue = 1048576000,
-        $systemData = [
-    ])
-    {
+        $systemData = []
+    ) {
         if (! empty($prefix)) {
             $prefix = ltrim($prefix, '/');
         }
