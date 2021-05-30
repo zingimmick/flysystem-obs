@@ -365,7 +365,8 @@ class ObsAdapter extends AbstractAdapter
     public function read($path)
     {
         try {
-            $contents = $this->getObject($path);
+            $contents = $this->getObject($path)
+                ->getContents();
         } catch (ObsException $exception) {
             return false;
         }
@@ -386,9 +387,8 @@ class ObsAdapter extends AbstractAdapter
     public function readStream($path)
     {
         try {
-            $stream = fopen('php://temp', 'w+b');
-            fwrite($stream, $this->getObject($path));
-            rewind($stream);
+            $stream = $this->getObject($path)
+                ->detach();
         } catch (ObsException $exception) {
             return false;
         }
@@ -527,7 +527,7 @@ class ObsAdapter extends AbstractAdapter
     {
         $path = $this->applyPathPrefix($path);
 
-        if (isset($this->options['cdn'])&&$this->options['cdn'] !== null) {
+        if (isset($this->options['cdn']) && $this->options['cdn'] !== null) {
             return rtrim($this->options['cdn'], '/') . '/' . ltrim($path, '/');
         }
 
@@ -567,7 +567,7 @@ class ObsAdapter extends AbstractAdapter
      *
      * @param $path
      *
-     * @return string
+     * @return \Obs\Internal\Common\CheckoutStream
      */
     protected function getObject($path)
     {
