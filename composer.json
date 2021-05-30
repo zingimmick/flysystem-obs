@@ -1,7 +1,7 @@
 {
-    "name": "zing/package-skeleton-php",
-    "description": "A skeleton repository for PHP Packages",
-    "keywords": ["php", "package", "skeleton"],
+    "name": "zing/flysystem-obs",
+    "description": "Flysystem adapter for the OBS SDK",
+    "keywords": ["flysystem", "obs"],
     "license": "MIT",
     "authors": [
         {
@@ -14,7 +14,10 @@
         "preferred-install": "dist"
     },
     "require": {
-        "php": "^7.2 || ^8.0"
+        "php": "^7.2 || ^8.0",
+        "ext-json": "*",
+        "league/flysystem": "^1.0",
+        "obs/esdk-obs-php": "^3.19"
     },
     "require-dev": {
         "phpunit/phpunit": "^8.0,<8.5.12 || ^9.3.3",
@@ -22,12 +25,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Zing\\Skeleton\\": "src"
+            "Zing\\Flysystem\\Obs\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Zing\\Skeleton\\Tests\\": "tests"
+            "Zing\\Flysystem\\Obs\\Tests\\": "tests"
         }
     },
     "scripts": {

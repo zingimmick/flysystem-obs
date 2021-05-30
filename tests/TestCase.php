@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Zing\Skeleton\Tests;
+namespace Zing\Flysystem\Obs\Tests;
 
 use PHPUnit\Framework\TestCase as BaseTestCase;
 
