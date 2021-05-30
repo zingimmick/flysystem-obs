@@ -34,10 +34,6 @@ class ObsAdapter extends AbstractAdapter
      */
     protected $client;
 
-    /**
-     * @var bool
-     */
-    protected $useSSL = false;
 
     /**
      * @param \Obs\ObsClient $client
@@ -53,7 +49,6 @@ class ObsAdapter extends AbstractAdapter
         $this->bucket = $bucket;
         $this->options = $options;
         $this->setPathPrefix($prefix);
-        $this->checkEndpoint();
     }
 
     /**
@@ -541,25 +536,19 @@ class ObsAdapter extends AbstractAdapter
      */
     protected function normalizeHost()
     {
-        $domain = isset($this->options['isCName']) && $this->options['isCName'] ? $this->endpoint : $this->bucket . '.' . $this->endpoint;
+        if (isset($this->options['isCName']) && $this->options['isCName']) {
+            return rtrim($this->endpoint, '/') . '/';
+        }
+        if (strpos($this->endpoint, 'http') !== 0) {
+            $this->endpoint = 'https://' . $this->endpoint;
+        }
+        $url = parse_url($this->endpoint);
 
-        $domain = $this->useSSL ? "https://{$domain}" : "http://{$domain}";
+        $domain = $this->bucket . '.' . $url['host'];
+
+        $domain = "{$url['scheme']}://{$domain}";
 
         return rtrim($domain, '/') . '/';
-    }
-
-    /**
-     * Check the endpoint to see if SSL can be used.
-     */
-    protected function checkEndpoint(): void
-    {
-        if (strpos($this->endpoint, 'http://') === 0) {
-            $this->endpoint = substr($this->endpoint, strlen('http://'));
-            $this->useSSL = false;
-        } elseif (strpos($this->endpoint, 'https://') === 0) {
-            $this->endpoint = substr($this->endpoint, strlen('https://'));
-            $this->useSSL = true;
-        }
     }
 
     /**
