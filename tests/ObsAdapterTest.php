@@ -87,6 +87,7 @@ class ObsAdapterTest extends TestCase
             'path_style' => '',
             'region' => '',
         ];
+        print base64_encode(json_encode($config));
         $obsClient = new ObsClient($config);
         $obsAdapter = new ObsAdapter($obsClient, $config['endpoint'], $config['bucket']);
         $filesystem = new Filesystem($obsAdapter);
