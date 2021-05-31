@@ -13,8 +13,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: [7.2]
-        stability: [highest]
+        php: [7.2, 7.3, 7.4, 8.0]
+        stability: [lowest, highest]
+        mock: [true]
+        include:
+          - php: 7.4
+            stability: highest
+            mock: false
 
     name: PHP ${{ matrix.php }} - ${{ matrix.stability }}
 
@@ -42,6 +47,7 @@ jobs:
           HUAWEI_CLOUD_KEY: ${{ secrets.HUAWEI_CLOUD_KEY }}
           HUAWEI_CLOUD_SECRET: ${{ secrets.HUAWEI_CLOUD_SECRET }}
           HUAWEI_CLOUD_BUCKET: ${{ secrets.HUAWEI_CLOUD_BUCKET }}
+          MOCK: ${{ matrix.mock }}
         run: composer run-script test:phpunit -- --coverage-clover coverage.xml
 
       - name: Upload coverage to Codecov
