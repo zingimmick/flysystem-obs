@@ -40,6 +40,10 @@ jobs:
           dependency-versions: ${{ matrix.stability }}
 
       - name: Execute tests
+        env:
+          HUAWEI_CLOUD_KEY: ${{ secrets.HUAWEI_CLOUD_KEY }}
+          HUAWEI_CLOUD_SECRET: ${{ secrets.HUAWEI_CLOUD_SECRET }}
+          HUAWEI_CLOUD_BUCKET: ${{ secrets.HUAWEI_CLOUD_BUCKET }}
         run: composer run-script test:phpunit -- --coverage-clover coverage.xml
 
       - name: Upload coverage to Codecov

@@ -53,5 +53,117 @@ class ObsAdapterTest extends TestCase
         $filesystem->addPlugin(new SignUrl());
         $filesystem->addPlugin(new TemporaryUrl());
         self::assertInstanceOf(ObsClient::class, $filesystem->kernel());
+        self::assertIsArray($filesystem->signatureConfig());
+        self::assertIsArray($filesystem->signatureConfig('/'));
+    }
+
+    private function getKey()
+    {
+        return getenv('HUAWEI_CLOUD_KEY') ?: '';
+    }
+
+    private function getSecret()
+    {
+        return getenv('HUAWEI_CLOUD_SECRET') ?: '';
+    }
+
+    private function getBucket()
+    {
+        return getenv('HUAWEI_CLOUD_BUCKET') ?: '';
+    }
+
+    private function getEndpoint()
+    {
+        return getenv('HUAWEI_CLOUD_ENDPOINT') ?: 'obs.cn-east-3.myhuaweicloud.com';
+    }
+
+    public function testValid(): void
+    {
+        $config = [
+            'key' => $this->getKey(),
+            'secret' => $this->getSecret(),
+            'bucket' => $this->getBucket(),
+            'endpoint' => $this->getEndpoint(),
+            'path_style' => '',
+            'region' => '',
+        ];
+        $obsClient = new ObsClient($config);
+        $obsAdapter = new ObsAdapter($obsClient, $config['endpoint'], $config['bucket']);
+        $filesystem = new Filesystem($obsAdapter);
+        $filesystem->addPlugin(new FileUrl());
+        $filesystem->addPlugin(new Kernel());
+        $filesystem->addPlugin(new SetBucket());
+        $filesystem->addPlugin(new SignatureConfig());
+        $filesystem->addPlugin(new SignUrl());
+        $filesystem->addPlugin(new TemporaryUrl());
+        self::assertInstanceOf(ObsClient::class, $filesystem->kernel());
+        if ($filesystem->has('11')) {
+            $filesystem->delete('11');
+        }
+        if ($filesystem->has('22')) {
+            $filesystem->delete('22');
+        }
+        if ($filesystem->has('33')) {
+            $filesystem->delete('33');
+        }
+
+        self::assertFalse($filesystem->has('11'));
+        $filesystem->put('11', 'test');
+        self::assertTrue($filesystem->has('11'));
+        self::assertSame('test', $filesystem->read('11'));
+        $stream = $filesystem->readStream('11');
+        self::assertSame('test', stream_get_contents($stream));
+        self::assertIsArray($filesystem->getMetadata('11'));
+        self::assertSame(4, $filesystem->getSize('11'));
+        self::assertSame('binary/octet-stream', $filesystem->getMimetype('11'));
+        self::assertGreaterThan(time() - 10, $filesystem->getTimestamp('11'));
+        self::assertSame('test', file_get_contents($filesystem->signUrl('11', 20)));
+        self::assertSame('test', file_get_contents($filesystem->getTemporaryUrl('11', 20)));
+        self::assertSame(AdapterInterface::VISIBILITY_PRIVATE, $filesystem->getVisibility('11'));
+        $filesystem->setVisibility('11', AdapterInterface::VISIBILITY_PUBLIC);
+        self::assertSame(AdapterInterface::VISIBILITY_PUBLIC, $filesystem->getVisibility('11'));
+        self::assertSame('test', file_get_contents($filesystem->getUrl('11')));
+        $filesystem->put('11', 'update');
+        self::assertSame('update', $filesystem->read('11'));
+        $filesystem->putStream('11', $stream);
+        self::assertSame('test', $filesystem->read('11'));
+        $filesystem->copy('11', '22');
+        self::assertTrue($filesystem->has('22'));
+        $filesystem->rename('22', '33');
+        self::assertFalse($filesystem->has('22'));
+        self::assertTrue($filesystem->has('33'));
+        $filesystem->createDir('test-dir');
+        $filesystem->put('test-dir/11', 'test');
+        self::assertCount(1, $filesystem->listContents('test-dir', true));
+        self::assertTrue($filesystem->has('test-dir/11'));
+        $filesystem->deleteDir('test-dir');
+        self::assertFalse($filesystem->has('test-dir/11'));
+        $filesystem->bucket('test');
+        self::assertFalse($filesystem->has('11'));
+        $filesystem->bucket('zing-test');
+        self::assertIsArray($filesystem->signatureConfig());
+        $filesystem->delete('11');
+    }
+
+    public function testGetUrlWithCdn(): void
+    {
+        $client = \Mockery::mock(ObsClient::class);
+        $obsAdapter = new ObsAdapter($client, '', '', '', [
+            'cdn' => 'https://oss.cdn.com',
+        ]);
+        $filesystem = new Filesystem($obsAdapter);
+        $filesystem->addPlugin(new FileUrl());
+        self::assertSame('https://oss.cdn.com/test', $filesystem->getUrl('test'));
+    }
+
+    public function testGetUrlWithCName(): void
+    {
+        $client = \Mockery::mock(ObsClient::class);
+        $obsAdapter = new ObsAdapter($client, 'https://oss.cdn.com', '', '', [
+            'isCName' => true,
+        ]);
+        $filesystem = new Filesystem($obsAdapter);
+        $filesystem->addPlugin(new FileUrl());
+        self::assertSame('https://oss.cdn.com/test', $filesystem->getUrl('test'));
     }
 }
