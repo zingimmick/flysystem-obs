@@ -105,6 +105,7 @@ class ObsAdapter extends AbstractAdapter
                 'Body' => $contents,
             ]));
         } catch (ObsException $obsException) {
+            print $obsException;
             return false;
         }
 
