@@ -21,8 +21,8 @@ class ObsAdapterTest extends TestCase
     public function testInvalid(): void
     {
         $config = [
-            'key' => 'invalid key',
-            'secret' => 'invalid secret',
+            'key' => 'aW52YWxpZC1rZXk=',
+            'secret' => 'aW52YWxpZC1zZWNyZXQ=',
             'bucket' => 'test',
             'endpoint' => 'obs.cn-east-3.myhuaweicloud.com',
             'path_style' => '',
