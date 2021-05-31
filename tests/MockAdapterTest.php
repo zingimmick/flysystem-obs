@@ -568,21 +568,38 @@ class MockAdapterTest extends TestCase
                 'MaxKeys' => 1000,
                 'Marker' => '',
             ],
-            ])->andReturn(new Model([
-                'NextMarker' => '',
-                'Contents' => [[
-                    'Key' => 'path/',
-                    'LastModified' => '2021-05-31T06:52:31.942Z',
-                    'ETag' => 'd41d8cd98f00b204e9800998ecf8427e',
-                    'Size' => 0,
-                    'StorageClass' => 'STANDARD_IA',
-                    'Owner' => [
-                        'DisplayName' => 'zingimmick',
-                        'ID' => '0c85ae1126000f380f21c00e77706640',
+            ])->andReturn(
+                new Model([
+                    'ContentLength' => '566',
+                    'Date' => 'Mon, 31 May 2021 15:23:25 GMT',
+                    'RequestId' => '00000179C305C54B920E25B74672EEBF',
+                    'Id2' => '32AAAQAAEAABAAAQAAEAABAAAQAAEAABCSfHbGTCJ9SuSxR2hiyYh0eEyU5XfrC0',
+                    'Reserved' => 'amazon, aws and amazon web services are trademarks or registered trademarks of Amazon Technologies, Inc',
+                    'IsTruncated' => false,
+                    'Marker' => '',
+                    'NextMarker' => '',
+                    'Contents' => [[
+                        'Key' => 'path/',
+                        'LastModified' => '2021-05-31T15:23:24.217Z',
+                        'ETag' => '"d41d8cd98f00b204e9800998ecf8427e"',
+                        'Size' => 0,
+                        'StorageClass' => 'STANDARD_IA',
+                        'Owner' => [
+                            'DisplayName' => 'zingimmick',
+                            'ID' => '0c85ae1126000f380f21c00e77706640',
+                        ],
                     ],
-                ],
-                ],
-            ]));
+                    ],
+                    'Name' => 'test',
+                    'Prefix' => 'path/',
+                    'Delimiter' => '/',
+                    'MaxKeys' => 1000,
+                    'CommonPrefixes' => [],
+                    'Location' => 'cn-east-3',
+                    'HttpStatusCode' => 200,
+                    'Reason' => 'OK',
+                ])
+            );
         $this->client->shouldReceive('getObjectMetadata')
             ->withArgs([[
                 'Bucket' => 'test',
@@ -631,6 +648,88 @@ class MockAdapterTest extends TestCase
                 'Contents' => [],
             ]));
         self::assertEmpty($this->adapter->listContents('path1'));
+        $this->mockPutObject('a/b/file.txt', 'test');
+        $this->adapter->write('a/b/file.txt', 'test', new Config());
+        $this->client->shouldReceive('listObjects')
+            ->withArgs([[
+                'Bucket' => 'test',
+                'Delimiter' => '/',
+                'Prefix' => 'a/',
+                'MaxKeys' => 1000,
+                'Marker' => '',
+            ],
+            ])->andReturn(new Model([
+                'ContentLength' => '333',
+                'Date' => 'Mon, 31 May 2021 15:23:25 GMT',
+                'RequestId' => '00000179C305C593920E2644AED41021',
+                'Id2' => '32AAAQAAEAABAAAQAAEAABAAAQAAEAABCSYw8g3pRtVZNn+ok4GA5fOUfUpb7nSm',
+                'Reserved' => 'amazon, aws and amazon web services are trademarks or registered trademarks of Amazon Technologies, Inc',
+                'IsTruncated' => false,
+                'Marker' => '',
+                'NextMarker' => '',
+                'Contents' => [],
+                'Name' => 'test',
+                'Prefix' => 'a/',
+                'Delimiter' => '/',
+                'MaxKeys' => 1000,
+                'CommonPrefixes' => [[
+                    'Prefix' => 'a/b/',
+                ],
+                ],
+                'Location' => 'cn-east-3',
+                'HttpStatusCode' => 200,
+                'Reason' => 'OK',
+            ]));
+        $this->client->shouldReceive('listObjects')
+            ->withArgs([[
+                'Bucket' => 'test',
+                'Delimiter' => '/',
+                'Prefix' => 'a/b/',
+                'MaxKeys' => 1000,
+                'Marker' => '',
+            ],
+            ])->andReturn(new Model([
+                'ContentLength' => '333',
+                'Date' => 'Mon, 31 May 2021 15:23:25 GMT',
+                'RequestId' => '00000179C305C593920E2644AED41021',
+                'Id2' => '32AAAQAAEAABAAAQAAEAABAAAQAAEAABCSYw8g3pRtVZNn+ok4GA5fOUfUpb7nSm',
+                'Reserved' => 'amazon, aws and amazon web services are trademarks or registered trademarks of Amazon Technologies, Inc',
+                'IsTruncated' => false,
+                'Marker' => '',
+                'NextMarker' => '',
+                'Contents' => [[
+                    'Key' => 'a/b/file.txt',
+                    'LastModified' => '2021-05-31T15:23:24.217Z',
+                    'ETag' => 'd41d8cd98f00b204e9800998ecf8427e',
+                    'Size' => 0,
+                    'StorageClass' => 'STANDARD_IA',
+                    'Owner' => [
+                        'DisplayName' => 'zingimmick',
+                        'ID' => '0c85ae1126000f380f21c00e77706640',
+                    ],
+                ],
+                ],
+                'Name' => 'test',
+                'Prefix' => 'a/b/',
+                'Delimiter' => '/',
+                'MaxKeys' => 1000,
+                'CommonPrefixes' => [],
+                'Location' => 'cn-east-3',
+                'HttpStatusCode' => 200,
+                'Reason' => 'OK',
+            ]));
+        $this->mockGetMetadata('a/b/file.txt');
+        self::assertSame([[
+            'type' => 'file',
+            'mimetype' => 'text/plain',
+            'path' => 'a/b/file.txt',
+            'timestamp' => 1622443952,
+            'size' => 9,
+        ], [
+            'type' => 'dir',
+            'path' => 'a/b/',
+        ],
+        ], $this->adapter->listContents('a', true));
     }
 
     public function testGetSize(): void

@@ -36,7 +36,7 @@ class ValidAdapterTest extends TestCase
 
     protected function setUp(): void
     {
-        if ((string) getenv('MOCK') === 'true') {
+        if ((string) getenv('MOCK') !== 'false') {
             self::markTestSkipped('Mock tests enabled');
         }
 
@@ -163,6 +163,8 @@ class ValidAdapterTest extends TestCase
     {
         self::assertNotEmpty($this->adapter->listContents('path'));
         self::assertEmpty($this->adapter->listContents('path1'));
+        $this->adapter->write('/a/b/file.txt', 'test', new Config());
+        $this->adapter->listContents('a', true);
     }
 
     public function testGetSize(): void
