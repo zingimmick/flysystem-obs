@@ -36,8 +36,8 @@ class ValidAdapterTest extends TestCase
 
     protected function setUp(): void
     {
-        if ((string) getenv('MOCK') === 'false') {
-            self::markTestSkipped('Secrets required');
+        if ((string) getenv('MOCK') === 'true') {
+            self::markTestSkipped('Mock tests enabled');
         }
 
         parent::setUp();
