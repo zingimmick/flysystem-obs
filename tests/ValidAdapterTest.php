@@ -55,59 +55,66 @@ class ValidAdapterTest extends TestCase
         $this->adapter->write('fixture/read.txt', 'read-test', new Config());
     }
 
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+
+        $this->adapter->deleteDir('fixture');
+    }
+
     public function testUpdate(): void
     {
-        $this->adapter->update('file.txt', 'update', new Config());
-        self::assertSame('update', $this->adapter->read('file.txt')['contents']);
+        $this->adapter->update('fixture/file.txt', 'update', new Config());
+        self::assertSame('update', $this->adapter->read('fixture/file.txt')['contents']);
     }
 
     public function testUpdateStream(): void
     {
-        $this->adapter->write('file.txt', 'write', new Config());
-        $this->adapter->updateStream('file.txt', stream_for('update')->detach(), new Config());
-        self::assertSame('update', $this->adapter->read('file.txt')['contents']);
+        $this->adapter->write('fixture/file.txt', 'write', new Config());
+        $this->adapter->updateStream('fixture/file.txt', stream_for('update')->detach(), new Config());
+        self::assertSame('update', $this->adapter->read('fixture/file.txt')['contents']);
     }
 
     public function testCopy(): void
     {
-        $this->adapter->write('file.txt', 'write', new Config());
-        $this->adapter->copy('file.txt', 'copy.txt');
-        self::assertSame('write', $this->adapter->read('copy.txt')['contents']);
+        $this->adapter->write('fixture/file.txt', 'write', new Config());
+        $this->adapter->copy('fixture/file.txt', 'fixture/copy.txt');
+        self::assertSame('write', $this->adapter->read('fixture/copy.txt')['contents']);
     }
 
     public function testCreateDir(): void
     {
-        $this->adapter->createDir('path', new Config());
+        $this->adapter->createDir('fixture/path', new Config());
         self::assertSame([[
             'type' => 'dir',
-            'path' => 'path',
+            'path' => 'fixture/path',
         ],
-        ], $this->adapter->listContents('path'));
+        ], $this->adapter->listContents('fixture/path'));
     }
 
     public function testSetVisibility(): void
     {
-        $this->adapter->write('file.txt', 'write', new Config());
+        $this->adapter->write('fixture/file.txt', 'write', new Config());
         self::assertSame(
             AdapterInterface::VISIBILITY_PRIVATE,
-            $this->adapter->getVisibility('file.txt')['visibility']
+            $this->adapter->getVisibility('fixture/file.txt')['visibility']
         );
-        $this->adapter->setVisibility('file.txt', AdapterInterface::VISIBILITY_PUBLIC);
+        $this->adapter->setVisibility('fixture/file.txt', AdapterInterface::VISIBILITY_PUBLIC);
         self::assertSame(
             AdapterInterface::VISIBILITY_PUBLIC,
-            $this->adapter->getVisibility('file.txt')['visibility']
+            $this->adapter->getVisibility('fixture/file.txt')['visibility']
         );
     }
 
     public function testRename(): void
     {
-        $this->adapter->write('from.txt', 'write', new Config());
-        self::assertTrue((bool) $this->adapter->has('from.txt'));
-        self::assertFalse((bool) $this->adapter->has('to.txt'));
-        $this->adapter->rename('from.txt', 'to.txt');
-        self::assertFalse((bool) $this->adapter->has('from.txt'));
-        self::assertSame('write', $this->adapter->read('to.txt')['contents']);
-        $this->adapter->delete('to.txt');
+        $this->adapter->write('fixture/from.txt', 'write', new Config());
+        self::assertTrue((bool) $this->adapter->has('fixture/from.txt'));
+        self::assertFalse((bool) $this->adapter->has('fixture/to.txt'));
+        $this->adapter->rename('fixture/from.txt', 'fixture/to.txt');
+        self::assertFalse((bool) $this->adapter->has('fixture/from.txt'));
+        self::assertSame('write', $this->adapter->read('fixture/to.txt')['contents']);
+        $this->adapter->delete('fixture/to.txt');
     }
 
     public function testDeleteDir(): void
@@ -118,22 +125,22 @@ class ValidAdapterTest extends TestCase
 
     public function testWriteStream(): void
     {
-        $this->adapter->writeStream('file.txt', stream_for('write')->detach(), new Config());
-        self::assertSame('write', $this->adapter->read('file.txt')['contents']);
+        $this->adapter->writeStream('fixture/file.txt', stream_for('write')->detach(), new Config());
+        self::assertSame('write', $this->adapter->read('fixture/file.txt')['contents']);
     }
 
     public function testDelete(): void
     {
-        $this->adapter->writeStream('file.txt', stream_for('test')->detach(), new Config());
-        self::assertTrue((bool) $this->adapter->has('file.txt'));
-        $this->adapter->delete('file.txt');
-        self::assertFalse((bool) $this->adapter->has('file.txt'));
+        $this->adapter->writeStream('fixture/file.txt', stream_for('test')->detach(), new Config());
+        self::assertTrue((bool) $this->adapter->has('fixture/file.txt'));
+        $this->adapter->delete('fixture/file.txt');
+        self::assertFalse((bool) $this->adapter->has('fixture/file.txt'));
     }
 
     public function testWrite(): void
     {
-        $this->adapter->write('file.txt', 'write', new Config());
-        self::assertSame('write', $this->adapter->read('file.txt')['contents']);
+        $this->adapter->write('fixture/file.txt', 'write', new Config());
+        self::assertSame('write', $this->adapter->read('fixture/file.txt')['contents']);
     }
 
     public function testRead(): void
@@ -161,9 +168,9 @@ class ValidAdapterTest extends TestCase
 
     public function testListContents(): void
     {
-        self::assertNotEmpty($this->adapter->listContents('path'));
+        self::assertNotEmpty($this->adapter->listContents('fixture'));
         self::assertEmpty($this->adapter->listContents('path1'));
-        $this->adapter->write('/a/b/file.txt', 'test', new Config());
+        $this->adapter->write('fixture/path/file.txt', 'test', new Config());
         $this->adapter->listContents('a', true);
     }
 
