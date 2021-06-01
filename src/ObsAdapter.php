@@ -15,6 +15,11 @@ class ObsAdapter extends AbstractAdapter
     public const PUBLIC_GRANT_URI = 'http://acs.amazonaws.com/groups/global/AllUsers';
 
     /**
+     * @var array
+     */
+    protected static $metaOptions = ['ACL', 'Expires', 'StorageClass'];
+
+    /**
      * @var string
      */
     protected $endpoint;
@@ -92,11 +97,7 @@ class ObsAdapter extends AbstractAdapter
     {
         $path = $this->applyPathPrefix($path);
 
-        $options = [];
-
-        if ($config->has('options')) {
-            $options = $config->get('options');
-        }
+        $options = $this->getOptionsFromConfig($config);
 
         try {
             $this->client->putObject(array_merge($options, [
@@ -707,5 +708,41 @@ class ObsAdapter extends AbstractAdapter
     public function getTemporaryUrl($path, $timeout, array $options = [], $method = 'GET')
     {
         return $this->signUrl($path, $timeout, $options, $method);
+    }
+
+    /**
+     * Get options from the config.
+     *
+     * @param \League\Flysystem\Config $config
+     *
+     * @return array
+     */
+    protected function getOptionsFromConfig(Config $config)
+    {
+        $options = $this->options;
+        $visibility = $config->get('visibility');
+        if ($visibility) {
+            // For local reference
+            $options['visibility'] = $visibility;
+            // For external reference
+            $options['ACL'] = $visibility === AdapterInterface::VISIBILITY_PUBLIC ? ObsClient::AclPublicRead : ObsClient::AclPrivate;
+        }
+
+        $mimetype = $config->get('mimetype');
+        if ($mimetype) {
+            // For local reference
+            $options['mimetype'] = $mimetype;
+            // For external reference
+            $options['ContentType'] = $mimetype;
+        }
+
+        foreach (static::$metaOptions as $option) {
+            if (! $config->has($option)) {
+                continue;
+            }
+            $options[$option] = $config->get($option);
+        }
+
+        return $options;
     }
 }
