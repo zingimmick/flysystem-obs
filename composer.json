@@ -17,7 +17,7 @@
         "php": "^7.2 || ^8.0",
         "ext-json": "*",
         "league/flysystem": "^1.0",
-        "obs/esdk-obs-php": "^3.19"
+        "zing/esdk-obs-php": "^3.19"
     },
     "require-dev": {
         "mockery/mockery": "~1.3.3 || ^1.4.2",
