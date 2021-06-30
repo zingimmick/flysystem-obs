@@ -55,7 +55,7 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * @var VisibilityConverter
      */
-    private $visibility;
+    private $visibilityConverter;
 
     /**
      * @var MimeTypeDetector
@@ -76,7 +76,7 @@ class ObsAdapter implements FilesystemAdapter
         $this->client = $client;
         $this->bucket = $bucket;
         $this->pathPrefixer = new PathPrefixer($prefix);
-        $this->visibility = $visibility ?: new PortableVisibilityConverter();
+        $this->visibilityConverter = $visibility ?: new PortableVisibilityConverter();
         $this->mimeTypeDetector = $mimeTypeDetector ?: new FinfoMimeTypeDetector();
         $this->options = $options;
     }
@@ -97,7 +97,7 @@ class ObsAdapter implements FilesystemAdapter
         if (! isset($options['ACL'])) {
             $visibility = $config->get(Config::OPTION_VISIBILITY);
             if ($visibility !== null) {
-                $options['ACL'] = $options['ACL'] ?? $this->visibility->visibilityToAcl($visibility);
+                $options['ACL'] = $options['ACL'] ?? $this->visibilityConverter->visibilityToAcl($visibility);
             }
         }
         $shouldDetermineMimetype = $contents !== '' && ! array_key_exists('ContentType', $options);
@@ -234,7 +234,7 @@ class ObsAdapter implements FilesystemAdapter
             $this->client->setObjectAcl([
                 'Bucket' => $this->bucket,
                 'Key' => $this->pathPrefixer->prefixPath($path),
-                'ACL' => $this->visibility->visibilityToAcl($visibility),
+                'ACL' => $this->visibilityConverter->visibilityToAcl($visibility),
             ]);
         } catch (ObsException $exception) {
             throw UnableToSetVisibility::atLocation($path, '', $exception);
@@ -261,7 +261,7 @@ class ObsAdapter implements FilesystemAdapter
             throw UnableToRetrieveMetadata::visibility($path, '', $exception);
         }
 
-        $visibility = $this->visibility->aclToVisibility((array) $result->get('Grants'));
+        $visibility = $this->visibilityConverter->aclToVisibility((array) $result->get('Grants'));
 
         return new FileAttributes($path, null, $visibility);
     }
