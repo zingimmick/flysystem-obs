@@ -22,15 +22,15 @@ class TemporaryUrl extends AbstractPlugin
      * handle.
      *
      * @param string $path
-     * @param int $timeout
+     * @param \DateTimeInterface|int $expiration
      * @param array $options
      * @param mixed $method
      *
      * @return mixed
      */
-    public function handle($path, $timeout, array $options = [], $method = 'GET')
+    public function handle($path, $expiration, array $options = [], $method = 'GET')
     {
         return $this->filesystem->getAdapter()
-            ->getTemporaryUrl($path, $timeout, $options, $method);
+            ->getTemporaryUrl($path, $expiration, $options, $method);
     }
 }

@@ -157,17 +157,11 @@ class InvalidAdapterTest extends TestCase
         self::assertInstanceOf(ObsClient::class, $this->adapter->getClient());
     }
 
-    public function testSignatureConfig(): void
-    {
-        self::assertIsArray($this->adapter->signatureConfig());
-        self::assertIsArray($this->adapter->signatureConfig('/'));
-    }
-
     public function testGetUrlWithCdn(): void
     {
         $client = \Mockery::mock(ObsClient::class);
         $obsAdapter = new ObsAdapter($client, '', '', '', [
-            'cdn' => 'https://oss.cdn.com',
+            'url' => 'https://oss.cdn.com',
         ]);
         $filesystem = new Filesystem($obsAdapter);
         $filesystem->addPlugin(new FileUrl());
@@ -178,7 +172,7 @@ class InvalidAdapterTest extends TestCase
     {
         $client = \Mockery::mock(ObsClient::class);
         $obsAdapter = new ObsAdapter($client, 'https://oss.cdn.com', '', '', [
-            'isCName' => true,
+            'bucket_endpoint' => true,
         ]);
         $filesystem = new Filesystem($obsAdapter);
         $filesystem->addPlugin(new FileUrl());
