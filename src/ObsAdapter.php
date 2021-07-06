@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Zing\Flysystem\Obs;
 
+use GuzzleHttp\Psr7\Uri;
 use League\Flysystem\Adapter\AbstractAdapter;
 use League\Flysystem\AdapterInterface;
 use League\Flysystem\Config;
@@ -692,13 +693,17 @@ class ObsAdapter extends AbstractAdapter
      */
     public function getTemporaryUrl($path, $expiration, array $options = [], $method = 'GET')
     {
-        $uri = $this->signUrl($path, $expiration, $options, $method);
+        $url = $this->signUrl($path, $expiration, $options, $method);
+        if ($url === false) {
+            return false;
+        }
+        $uri = new Uri($this->signUrl($path, $expiration, $options, $method));
         $url = $this->options['temporary_url'] ?? null;
         if ($url !== null) {
             $uri = $this->replaceBaseUrl($uri, $url);
         }
 
-        return $uri;
+        return (string) $uri;
     }
 
     /**

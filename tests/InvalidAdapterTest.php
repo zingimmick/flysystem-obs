@@ -11,10 +11,13 @@ use Obs\ObsClient;
 use Obs\ObsException;
 use Zing\Flysystem\Obs\ObsAdapter;
 use Zing\Flysystem\Obs\Plugins\FileUrl;
+use Zing\Flysystem\Obs\Plugins\TemporaryUrl;
 
 class InvalidAdapterTest extends TestCase
 {
     private $adapter;
+
+    private $client;
 
     protected function setUp(): void
     {
@@ -28,8 +31,8 @@ class InvalidAdapterTest extends TestCase
             'path_style' => '',
             'region' => '',
         ];
-        $obsClient = new ObsClient($config);
-        $this->adapter = new ObsAdapter($obsClient, $config['endpoint'], $config['bucket']);
+        $this->client = new ObsClient($config);
+        $this->adapter = new ObsAdapter($this->client, $config['endpoint'], $config['bucket']);
     }
 
     public function testUpdate(): void
@@ -156,7 +159,7 @@ class InvalidAdapterTest extends TestCase
         self::assertInstanceOf(ObsClient::class, $this->adapter->getClient());
     }
 
-    public function testGetUrlWithCdn(): void
+    public function testGetUrlWithUrl(): void
     {
         $client = \Mockery::mock(ObsClient::class);
         $obsAdapter = new ObsAdapter($client, '', '', '', [
@@ -167,7 +170,7 @@ class InvalidAdapterTest extends TestCase
         self::assertSame('https://oss.cdn.com/test', $filesystem->getUrl('test'));
     }
 
-    public function testGetUrlWithCName(): void
+    public function testGetUrlWithBucketEndpoint(): void
     {
         $client = \Mockery::mock(ObsClient::class);
         $obsAdapter = new ObsAdapter($client, 'https://oss.cdn.com', '', '', [
@@ -176,5 +179,15 @@ class InvalidAdapterTest extends TestCase
         $filesystem = new Filesystem($obsAdapter);
         $filesystem->addPlugin(new FileUrl());
         self::assertSame('https://oss.cdn.com/test', $filesystem->getUrl('test'));
+    }
+
+    public function testGetTemporaryUrlWithUrl(): void
+    {
+        $obsAdapter = new ObsAdapter($this->client, 'https://oss.cdn.com', '', '', [
+            'temporary_url' => 'https://oss.cdn.com',
+        ]);
+        $filesystem = new Filesystem($obsAdapter);
+        $filesystem->addPlugin(new TemporaryUrl());
+        self::assertStringStartsWith('https://oss.cdn.com/test', (string) $filesystem->getTemporaryUrl('test', 10));
     }
 }
