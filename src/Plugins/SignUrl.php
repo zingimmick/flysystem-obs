@@ -22,14 +22,15 @@ class SignUrl extends AbstractPlugin
      * handle.
      *
      * @param $path
-     * @param $timeout
+     * @param \DateTimeInterface|int $expiration
+     * @param array $options
      * @param mixed $method
      *
      * @return mixed
      */
-    public function handle($path, $timeout, array $options = [], $method = 'GET')
+    public function handle($path, $expiration, array $options = [], $method = 'GET')
     {
         return $this->filesystem->getAdapter()
-            ->signUrl($path, $timeout, $options, $method);
+            ->signUrl($path, $expiration, $options, $method);
     }
 }

@@ -11,7 +11,6 @@ use Obs\ObsClient;
 use Obs\ObsException;
 use Zing\Flysystem\Obs\ObsAdapter;
 use Zing\Flysystem\Obs\Plugins\FileUrl;
-use function GuzzleHttp\Psr7\stream_for;
 
 class InvalidAdapterTest extends TestCase
 {
@@ -40,7 +39,7 @@ class InvalidAdapterTest extends TestCase
 
     public function testUpdateStream(): void
     {
-        self::assertFalse($this->adapter->updateStream('file.txt', stream_for('test')->detach(), new Config()));
+        self::assertFalse($this->adapter->updateStream('file.txt', $this->streamFor('test')->detach(), new Config()));
     }
 
     public function testCopy(): void
@@ -71,7 +70,7 @@ class InvalidAdapterTest extends TestCase
 
     public function testWriteStream(): void
     {
-        self::assertFalse($this->adapter->writeStream('file.txt', stream_for('test')->detach(), new Config()));
+        self::assertFalse($this->adapter->writeStream('file.txt', $this->streamFor('test')->detach(), new Config()));
     }
 
     public function testDelete(): void
@@ -157,17 +156,11 @@ class InvalidAdapterTest extends TestCase
         self::assertInstanceOf(ObsClient::class, $this->adapter->getClient());
     }
 
-    public function testSignatureConfig(): void
-    {
-        self::assertIsArray($this->adapter->signatureConfig());
-        self::assertIsArray($this->adapter->signatureConfig('/'));
-    }
-
     public function testGetUrlWithCdn(): void
     {
         $client = \Mockery::mock(ObsClient::class);
         $obsAdapter = new ObsAdapter($client, '', '', '', [
-            'cdn' => 'https://oss.cdn.com',
+            'url' => 'https://oss.cdn.com',
         ]);
         $filesystem = new Filesystem($obsAdapter);
         $filesystem->addPlugin(new FileUrl());
@@ -178,7 +171,7 @@ class InvalidAdapterTest extends TestCase
     {
         $client = \Mockery::mock(ObsClient::class);
         $obsAdapter = new ObsAdapter($client, 'https://oss.cdn.com', '', '', [
-            'isCName' => true,
+            'bucket_endpoint' => true,
         ]);
         $filesystem = new Filesystem($obsAdapter);
         $filesystem->addPlugin(new FileUrl());

@@ -522,11 +522,26 @@ class ObsAdapter extends AbstractAdapter
     {
         $path = $this->applyPathPrefix($path);
 
-        if (isset($this->options['cdn']) && $this->options['cdn'] !== null) {
-            return rtrim($this->options['cdn'], '/') . '/' . ltrim($path, '/');
+        if (isset($this->options['url'])) {
+            return $this->concatPathToUrl($this->options['url'], $path);
         }
 
         return $this->normalizeHost() . ltrim($path, '/');
+    }
+
+    protected function concatPathToUrl($url, $path)
+    {
+        return rtrim($url, '/') . '/' . ltrim($path, '/');
+    }
+
+    protected function replaceBaseUrl($uri, $url)
+    {
+        $parsed = parse_url($url);
+
+        return $uri
+            ->withScheme($parsed['scheme'])
+            ->withHost($parsed['host'])
+            ->withPort($parsed['port'] ?? null);
     }
 
     /**
@@ -536,7 +551,7 @@ class ObsAdapter extends AbstractAdapter
      */
     protected function normalizeHost()
     {
-        if (isset($this->options['isCName']) && $this->options['isCName']) {
+        if (isset($this->options['bucket_endpoint']) && $this->options['bucket_endpoint']) {
             return rtrim($this->endpoint, '/') . '/';
         }
         if (strpos($this->endpoint, 'http') !== 0) {
@@ -637,49 +652,18 @@ class ObsAdapter extends AbstractAdapter
     }
 
     /**
-     * 获取直传配置.
-     *
-     * @param string $prefix
-     * @param null $callBackUrl
-     * @param array $customData
-     * @param int $expire
-     * @param int $contentLengthRangeValue
-     * @param array $systemData
-     *
-     * @throws \Exception
-     *
-     * @return false|array
-     */
-    public function signatureConfig(
-        $prefix = '',
-        $callBackUrl = null,
-        $customData = [],
-        $expire = 30,
-        $contentLengthRangeValue = 1048576000,
-        $systemData = []
-    ) {
-        if (! empty($prefix)) {
-            $prefix = ltrim($prefix, '/');
-        }
-
-        return $this->client->createPostSignature([
-            'Bucket' => $this->bucket,
-            'Key' => $prefix,
-            'Expires' => $expire,
-        ])->toArray();
-    }
-
-    /**
      * sign url.
      *
      * @param $path
-     * @param $timeout
+     * @param \DateTimeInterface|int $expiration
+     * @param array $options
      * @param mixed $method
      *
      * @return bool|string
      */
-    public function signUrl($path, $timeout, array $options = [], $method = 'GET')
+    public function signUrl($path, $expiration, array $options = [], $method = 'GET')
     {
+        $expires = $expiration instanceof \DateTimeInterface ? $expiration->getTimestamp() - time() : $expiration;
         $path = $this->applyPathPrefix($path);
 
         try {
@@ -687,7 +671,7 @@ class ObsAdapter extends AbstractAdapter
                 'Method' => $method,
                 'Bucket' => $this->bucket,
                 'Key' => $path,
-                'Expires' => $timeout,
+                'Expires' => $expires,
             ], $options));
         } catch (ObsException $exception) {
             return false;
@@ -700,14 +684,21 @@ class ObsAdapter extends AbstractAdapter
      * temporary file url.
      *
      * @param string $path
-     * @param int $timeout
+     * @param \DateTimeInterface|int $expiration
+     * @param array $options
      * @param mixed $method
      *
      * @return bool|string
      */
-    public function getTemporaryUrl($path, $timeout, array $options = [], $method = 'GET')
+    public function getTemporaryUrl($path, $expiration, array $options = [], $method = 'GET')
     {
-        return $this->signUrl($path, $timeout, $options, $method);
+        $uri = $this->signUrl($path, $expiration, $options, $method);
+        $url = $this->options['temporary_url'] ?? null;
+        if ($url !== null) {
+            $uri = $this->replaceBaseUrl($uri, $url);
+        }
+
+        return $uri;
     }
 
     /**

@@ -10,7 +10,6 @@ use Obs\Internal\Common\Model;
 use Obs\ObsClient;
 use Obs\ObsException;
 use Zing\Flysystem\Obs\ObsAdapter;
-use function GuzzleHttp\Psr7\stream_for;
 
 class MockAdapterTest extends TestCase
 {
@@ -50,7 +49,7 @@ class MockAdapterTest extends TestCase
                 'Key' => 'file.txt',
             ],
             ])->andReturn(new Model([
-                'Body' => stream_for('update'),
+                'Body' => $this->streamFor('update'),
             ]));
         self::assertSame('update', $this->adapter->read('file.txt')['contents']);
     }
@@ -72,14 +71,14 @@ class MockAdapterTest extends TestCase
                 'Body' => 'update',
             ],
             ])->andReturn(new Model());
-        $this->adapter->updateStream('file.txt', stream_for('update')->detach(), new Config());
+        $this->adapter->updateStream('file.txt', $this->streamFor('update')->detach(), new Config());
         $this->client->shouldReceive('getObject')
             ->withArgs([[
                 'Bucket' => 'test',
                 'Key' => 'file.txt',
             ],
             ])->andReturn(new Model([
-                'Body' => stream_for('update'),
+                'Body' => $this->streamFor('update'),
             ]));
         self::assertSame('update', $this->adapter->read('file.txt')['contents']);
     }
@@ -120,7 +119,7 @@ class MockAdapterTest extends TestCase
                 'Key' => $path,
             ],
             ])->andReturn(new Model([
-                'Body' => stream_for($body),
+                'Body' => $this->streamFor($body),
             ]));
     }
 
@@ -417,7 +416,7 @@ class MockAdapterTest extends TestCase
     public function testWriteStream(): void
     {
         $this->mockPutObject('file.txt', 'write');
-        $this->adapter->writeStream('file.txt', stream_for('write')->detach(), new Config());
+        $this->adapter->writeStream('file.txt', $this->streamFor('write')->detach(), new Config());
         $this->mockGetObject('file.txt', 'write');
         self::assertSame('write', $this->adapter->read('file.txt')['contents']);
     }
@@ -425,7 +424,7 @@ class MockAdapterTest extends TestCase
     public function testDelete(): void
     {
         $this->mockPutObject('file.txt', 'write');
-        $this->adapter->writeStream('file.txt', stream_for('write')->detach(), new Config());
+        $this->adapter->writeStream('file.txt', $this->streamFor('write')->detach(), new Config());
         $this->mockGetMetadata('file.txt');
         self::assertTrue((bool) $this->adapter->has('file.txt'));
         $this->client->shouldReceive('deleteObject')
@@ -460,7 +459,7 @@ class MockAdapterTest extends TestCase
                 'Key' => 'fixture/read.txt',
             ],
             ])->andReturn(new Model([
-                'Body' => stream_for('read-test'),
+                'Body' => $this->streamFor('read-test'),
             ]));
         self::assertSame('read-test', $this->adapter->read('fixture/read.txt')['contents']);
     }
@@ -473,7 +472,7 @@ class MockAdapterTest extends TestCase
                 'Key' => 'fixture/read.txt',
             ],
             ])->andReturn(new Model([
-                'Body' => stream_for('read-test'),
+                'Body' => $this->streamFor('read-test'),
             ]));
         self::assertSame('read-test', stream_get_contents($this->adapter->readStream('fixture/read.txt')['stream']));
     }
