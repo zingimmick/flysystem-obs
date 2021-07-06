@@ -693,8 +693,8 @@ class ObsAdapter extends AbstractAdapter
      */
     public function getTemporaryUrl($path, $expiration, array $options = [], $method = 'GET')
     {
-        $url=$this->signUrl($path, $expiration, $options, $method);
-        if ($url===false){
+        $url = $this->signUrl($path, $expiration, $options, $method);
+        if ($url === false) {
             return false;
         }
         $uri = new Uri($this->signUrl($path, $expiration, $options, $method));

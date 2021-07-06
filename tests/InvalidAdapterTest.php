@@ -16,7 +16,9 @@ use Zing\Flysystem\Obs\Plugins\TemporaryUrl;
 class InvalidAdapterTest extends TestCase
 {
     private $adapter;
-private $client;
+
+    private $client;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -186,6 +188,6 @@ private $client;
         ]);
         $filesystem = new Filesystem($obsAdapter);
         $filesystem->addPlugin(new TemporaryUrl());
-        self::assertStringStartsWith('https://oss.cdn.com/test',(string)$filesystem->getTemporaryUrl('test',10));
+        self::assertStringStartsWith('https://oss.cdn.com/test', (string) $filesystem->getTemporaryUrl('test', 10));
     }
 }
