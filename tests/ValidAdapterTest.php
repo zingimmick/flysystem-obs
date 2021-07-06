@@ -70,6 +70,7 @@ class ValidAdapterTest extends TestCase
     public function testUpdateStream(): void
     {
         $this->adapter->write('fixture/file.txt', 'write', new Config());
+        $this->adapter->updateStream('fixture/file.txt', $this->streamFor('update')->detach(), new Config());
         self::assertSame('update', $this->adapter->read('fixture/file.txt')['contents']);
     }
 
@@ -123,11 +124,13 @@ class ValidAdapterTest extends TestCase
 
     public function testWriteStream(): void
     {
+        $this->adapter->writeStream('fixture/file.txt', $this->streamFor('write')->detach(), new Config());
         self::assertSame('write', $this->adapter->read('fixture/file.txt')['contents']);
     }
 
     public function testDelete(): void
     {
+        $this->adapter->writeStream('fixture/file.txt', $this->streamFor('test')->detach(), new Config());
         self::assertTrue((bool) $this->adapter->has('fixture/file.txt'));
         $this->adapter->delete('fixture/file.txt');
         self::assertFalse((bool) $this->adapter->has('fixture/file.txt'));
