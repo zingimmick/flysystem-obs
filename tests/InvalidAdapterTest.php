@@ -11,7 +11,6 @@ use Obs\ObsClient;
 use Obs\ObsException;
 use Zing\Flysystem\Obs\ObsAdapter;
 use Zing\Flysystem\Obs\Plugins\FileUrl;
-use function GuzzleHttp\Psr7\stream_for;
 
 class InvalidAdapterTest extends TestCase
 {
@@ -40,7 +39,7 @@ class InvalidAdapterTest extends TestCase
 
     public function testUpdateStream(): void
     {
-        self::assertFalse($this->adapter->updateStream('file.txt', stream_for('test')->detach(), new Config()));
+        self::assertFalse($this->adapter->updateStream('file.txt', $this->streamFor('test')->detach(), new Config()));
     }
 
     public function testCopy(): void
@@ -71,7 +70,7 @@ class InvalidAdapterTest extends TestCase
 
     public function testWriteStream(): void
     {
-        self::assertFalse($this->adapter->writeStream('file.txt', stream_for('test')->detach(), new Config()));
+        self::assertFalse($this->adapter->writeStream('file.txt', $this->streamFor('test')->detach(), new Config()));
     }
 
     public function testDelete(): void
