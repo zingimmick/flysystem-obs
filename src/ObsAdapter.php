@@ -552,15 +552,15 @@ class ObsAdapter extends AbstractAdapter
      */
     protected function normalizeHost()
     {
-        if (isset($this->options['bucket_endpoint']) && $this->options['bucket_endpoint']) {
-            return rtrim($this->endpoint, '/') . '/';
+        $endpoint = $this->endpoint;
+        if (strpos($endpoint, 'http') !== 0) {
+            $endpoint = 'https://' . $endpoint;
         }
-        if (strpos($this->endpoint, 'http') !== 0) {
-            $this->endpoint = 'https://' . $this->endpoint;
+        $url = parse_url($endpoint);
+        $domain = $url['host'];
+        if (! ($this->options['bucket_endpoint'] ?? false)) {
+            $domain = $this->bucket . '.' . $domain;
         }
-        $url = parse_url($this->endpoint);
-
-        $domain = $this->bucket . '.' . $url['host'];
 
         $domain = "{$url['scheme']}://{$domain}";
 
@@ -697,7 +697,7 @@ class ObsAdapter extends AbstractAdapter
         if ($url === false) {
             return false;
         }
-        $uri = new Uri($this->signUrl($path, $expiration, $options, $method));
+        $uri = new Uri($url);
         $url = $this->options['temporary_url'] ?? null;
         if ($url !== null) {
             $uri = $this->replaceBaseUrl($uri, $url);
