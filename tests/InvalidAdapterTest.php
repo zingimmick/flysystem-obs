@@ -17,7 +17,6 @@ use League\Flysystem\Visibility;
 use Obs\ObsClient;
 use Obs\ObsException;
 use Zing\Flysystem\Obs\ObsAdapter;
-use function GuzzleHttp\Psr7\stream_for;
 
 class InvalidAdapterTest extends TestCase
 {
@@ -72,7 +71,7 @@ class InvalidAdapterTest extends TestCase
     public function testWriteStream(): void
     {
         $this->expectException(UnableToWriteFile::class);
-        $this->adapter->writeStream('file.txt', stream_for('test')->detach(), new Config());
+        $this->adapter->writeStream('file.txt', $this->streamFor('test')->detach(), new Config());
     }
 
     public function testDelete(): void
@@ -102,7 +101,8 @@ class InvalidAdapterTest extends TestCase
     public function testGetVisibility(): void
     {
         $this->expectException(UnableToRetrieveMetadata::class);
-        $this->adapter->visibility('file.txt')->visibility();
+        $this->adapter->visibility('file.txt')
+            ->visibility();
     }
 
     public function testListContents(): void
@@ -114,19 +114,22 @@ class InvalidAdapterTest extends TestCase
     public function testGetSize(): void
     {
         $this->expectException(UnableToRetrieveMetadata::class);
-        $this->adapter->fileSize('file.txt')->fileSize();
+        $this->adapter->fileSize('file.txt')
+            ->fileSize();
     }
 
     public function testGetTimestamp(): void
     {
         $this->expectException(UnableToRetrieveMetadata::class);
-        $this->adapter->lastModified('file.txt')->lastModified();
+        $this->adapter->lastModified('file.txt')
+            ->lastModified();
     }
 
     public function testGetMimetype(): void
     {
         $this->expectException(UnableToRetrieveMetadata::class);
-        $this->adapter->mimeType('file.txt')->mimeType();
+        $this->adapter->mimeType('file.txt')
+            ->mimeType();
     }
 
     public function testHas(): void

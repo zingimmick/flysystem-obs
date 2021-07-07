@@ -21,6 +21,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         PhpUnitInternalClassFixer::class,
         PhpUnitTestClassRequiresCoversFixer::class,
         NoSuperfluousPhpdocTagsFixer::class,
+        PhpCsFixer\Fixer\PhpUnit\PhpUnitStrictFixer::class => [
+            __DIR__ . '/tests/MockAdapterTest.php',
+            __DIR__ . '/tests/ValidAdapterTest.php',
+        ],
     ]);
     $parameters->set(
         Option::PATHS,

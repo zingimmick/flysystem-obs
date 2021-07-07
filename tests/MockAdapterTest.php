@@ -13,7 +13,6 @@ use Obs\Internal\Common\Model;
 use Obs\ObsClient;
 use Obs\ObsException;
 use Zing\Flysystem\Obs\ObsAdapter;
-use function GuzzleHttp\Psr7\stream_for;
 
 class MockAdapterTest extends TestCase
 {
@@ -35,7 +34,8 @@ class MockAdapterTest extends TestCase
     {
         $this->client->shouldReceive('putObject')
             ->withArgs([[
-                'ContentType' => 'text/plain', 'Bucket' => 'test',
+                'ContentType' => 'text/plain',
+                'Bucket' => 'test',
                 'Key' => $path,
                 'Body' => $body,
             ],
@@ -67,7 +67,7 @@ class MockAdapterTest extends TestCase
                 'Key' => $path,
             ],
             ])->andReturn(new Model([
-                'Body' => stream_for($body),
+                'Body' => $this->streamFor($body),
             ]));
     }
 
@@ -140,7 +140,8 @@ class MockAdapterTest extends TestCase
             ));
         self::assertEquals(
             [new DirectoryAttributes('path')],
-            iterator_to_array($this->adapter->listContents('path', false)));
+            iterator_to_array($this->adapter->listContents('path', false))
+        );
     }
 
     public function testSetVisibility(): void
@@ -207,10 +208,7 @@ class MockAdapterTest extends TestCase
                 'HttpStatusCode' => 200,
                 'Reason' => 'OK',
             ]));
-        self::assertSame(
-            Visibility::PRIVATE,
-            $this->adapter->visibility('file.txt')->visibility()
-        );
+        self::assertSame(Visibility::PRIVATE, $this->adapter->visibility('file.txt')->visibility());
         $this->client->shouldReceive('setObjectAcl')
             ->withArgs([[
                 'Bucket' => 'test',
@@ -228,10 +226,7 @@ class MockAdapterTest extends TestCase
             ]));
         $this->adapter->setVisibility('file.txt', Visibility::PUBLIC);
 
-        self::assertSame(
-            Visibility::PUBLIC,
-            $this->adapter->visibility('file.txt')['visibility']
-        );
+        self::assertSame(Visibility::PUBLIC, $this->adapter->visibility('file.txt')['visibility']);
     }
 
     public function testRename(): void
@@ -357,7 +352,7 @@ class MockAdapterTest extends TestCase
     public function testWriteStream(): void
     {
         $this->mockPutObject('file.txt', 'write');
-        $this->adapter->writeStream('file.txt', stream_for('write')->detach(), new Config());
+        $this->adapter->writeStream('file.txt', $this->streamFor('write')->detach(), new Config());
         $this->mockGetObject('file.txt', 'write');
         self::assertSame('write', $this->adapter->read('file.txt'));
     }
@@ -365,7 +360,7 @@ class MockAdapterTest extends TestCase
     public function testDelete(): void
     {
         $this->mockPutObject('file.txt', 'write');
-        $this->adapter->writeStream('file.txt', stream_for('write')->detach(), new Config());
+        $this->adapter->writeStream('file.txt', $this->streamFor('write')->detach(), new Config());
         $this->mockGetMetadata('file.txt');
         self::assertTrue((bool) $this->adapter->fileExists('file.txt'));
         $this->client->shouldReceive('deleteObject')
@@ -436,10 +431,7 @@ class MockAdapterTest extends TestCase
                 ],
                 ],
             ]));
-        self::assertSame(
-            Visibility::PRIVATE,
-            $this->adapter->visibility('fixture/read.txt')['visibility']
-        );
+        self::assertSame(Visibility::PRIVATE, $this->adapter->visibility('fixture/read.txt')['visibility']);
     }
 
     private function mockGetMetadata($path): void
@@ -642,9 +634,14 @@ class MockAdapterTest extends TestCase
         $this->mockGetMetadata('a/b/file.txt');
         self::assertEquals([new FileAttributes(
             'a/b/file.txt',
-            null, null, 1622474604, null
-            , ['StorageClass' => 'STANDARD_IA',
-                'ETag' => 'd41d8cd98f00b204e9800998ecf8427e']
+            null,
+            null,
+            1622474604,
+            null,
+            [
+                'StorageClass' => 'STANDARD_IA',
+                'ETag' => 'd41d8cd98f00b204e9800998ecf8427e',
+            ]
         ), new DirectoryAttributes('a/b/'),
         ], iterator_to_array($this->adapter->listContents('a', true)));
     }

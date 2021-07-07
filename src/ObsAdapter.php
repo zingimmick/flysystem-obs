@@ -8,7 +8,6 @@ use League\Flysystem\Config;
 use League\Flysystem\DirectoryAttributes;
 use League\Flysystem\FileAttributes;
 use League\Flysystem\FilesystemAdapter;
-use League\Flysystem\FilesystemException;
 use League\Flysystem\FilesystemOperationFailed;
 use League\Flysystem\PathPrefixer;
 use League\Flysystem\StorageAttributes;
@@ -29,6 +28,8 @@ use Throwable;
 
 class ObsAdapter implements FilesystemAdapter
 {
+    private const EXTRA_METADATA_FIELDS = ['Metadata', 'StorageClass', 'ETag', 'VersionId'];
+
     /**
      * @var array
      */
@@ -48,17 +49,19 @@ class ObsAdapter implements FilesystemAdapter
      * @var \Obs\ObsClient
      */
     protected $client;
+
     /**
      * @var \League\Flysystem\PathPrefixer
      */
     private $pathPrefixer;
+
     /**
-     * @var VisibilityConverter
+     * @var \Zing\Flysystem\Obs\VisibilityConverter
      */
     private $visibilityConverter;
 
     /**
-     * @var MimeTypeDetector
+     * @var \League\MimeTypeDetection\MimeTypeDetector
      */
     private $mimeTypeDetector;
 
@@ -70,9 +73,14 @@ class ObsAdapter implements FilesystemAdapter
      * @param \League\MimeTypeDetection\MimeTypeDetector|null $mimeTypeDetector
      * @param array $options
      */
-    public function __construct(ObsClient $client, string $bucket, string $prefix = '', VisibilityConverter $visibility = null,
-                                MimeTypeDetector $mimeTypeDetector = null, array $options = [])
-    {
+    public function __construct(
+        ObsClient $client,
+        string $bucket,
+        string $prefix = '',
+        ?VisibilityConverter $visibility = null,
+        ?MimeTypeDetector $mimeTypeDetector = null,
+        array $options = []
+    ) {
         $this->client = $client;
         $this->bucket = $bucket;
         $this->pathPrefixer = new PathPrefixer($prefix);
@@ -87,6 +95,7 @@ class ObsAdapter implements FilesystemAdapter
      * @param string $path
      * @param string $contents
      * @param \League\Flysystem\Config $config
+     *
      * @return array|false
      */
     public function write(string $path, string $contents, Config $config): void
@@ -102,9 +111,13 @@ class ObsAdapter implements FilesystemAdapter
         }
         $shouldDetermineMimetype = $contents !== '' && ! array_key_exists('ContentType', $options);
 
-        if ($shouldDetermineMimetype && $mimeType = $this->mimeTypeDetector->detectMimeType($path, $contents)) {
-            $options['ContentType'] = $mimeType;
+        if ($shouldDetermineMimetype) {
+            $mimeType = $this->mimeTypeDetector->detectMimeType($path, $contents);
+            if ($mimeType) {
+                $options['ContentType'] = $mimeType;
+            }
         }
+
         try {
             $this->client->putObject(array_merge($options, [
                 'Bucket' => $this->bucket,
@@ -119,8 +132,8 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * @param resource $contents
      *
-     * @throws UnableToWriteFile
-     * @throws FilesystemException
+     * @throws \League\Flysystem\UnableToWriteFile
+     * @throws \League\Flysystem\FilesystemException
      */
     public function writeStream(string $path, $contents, Config $config): void
     {
@@ -133,7 +146,6 @@ class ObsAdapter implements FilesystemAdapter
      * @param string $source
      * @param string $destination
      * @param \League\Flysystem\Config $config
-     * @return void
      */
     public function move(string $source, string $destination, Config $config): void
     {
@@ -151,7 +163,6 @@ class ObsAdapter implements FilesystemAdapter
      * @param string $source
      * @param string $destination
      * @param \League\Flysystem\Config $config
-     * @return void
      */
     public function copy(string $source, string $destination, Config $config): void
     {
@@ -165,15 +176,12 @@ class ObsAdapter implements FilesystemAdapter
         } catch (ObsException $exception) {
             throw UnableToCopyFile::fromLocationTo($source, $destination, $exception);
         }
-
     }
 
     /**
      * delete a file.
      *
      * @param string $path
-     *
-     * @return void
      */
     public function delete(string $path): void
     {
@@ -185,16 +193,14 @@ class ObsAdapter implements FilesystemAdapter
                 'Key' => $path,
             ]);
         } catch (ObsException $obsException) {
-            throw  UnableToDeleteFile::atLocation($path, '', $obsException);
+            throw UnableToDeleteFile::atLocation($path, '', $obsException);
         }
-
     }
 
     /**
      * Delete a directory.
      *
      * @param string $path
-     * @return void
      */
     public function deleteDirectory(string $path): void
     {
@@ -209,14 +215,13 @@ class ObsAdapter implements FilesystemAdapter
      *
      * @param string $path
      * @param \League\Flysystem\Config $config
-     * @return void
      */
     public function createDirectory(string $path, Config $config): void
     {
         try {
             $this->write(trim($path, '/') . '/', '', $config);
         } catch (FilesystemOperationFailed $exception) {
-            throw  UnableToCreateDirectory::dueToFailure($path, $exception);
+            throw UnableToCreateDirectory::dueToFailure($path, $exception);
         }
     }
 
@@ -280,6 +285,7 @@ class ObsAdapter implements FilesystemAdapter
         } catch (Throwable $throwable) {
             return false;
         }
+
         return true;
     }
 
@@ -292,7 +298,8 @@ class ObsAdapter implements FilesystemAdapter
      */
     public function read(string $path): string
     {
-        return $this->getObject($path)->getContents();
+        return $this->getObject($path)
+            ->getContents();
     }
 
     /**
@@ -304,7 +311,8 @@ class ObsAdapter implements FilesystemAdapter
      */
     public function readStream(string $path)
     {
-        return $this->getObject($path)->detach();
+        return $this->getObject($path)
+            ->detach();
     }
 
     /**
@@ -312,6 +320,7 @@ class ObsAdapter implements FilesystemAdapter
      *
      * @param string $path
      * @param bool $deep
+     *
      * @return \Traversable
      */
     public function listContents(string $path, bool $deep): iterable
@@ -332,7 +341,8 @@ class ObsAdapter implements FilesystemAdapter
      *
      * @param string $path
      * @param string $type
-     * @return FileAttributes
+     *
+     * @return \League\Flysystem\FileAttributes
      */
     private function getMetadata(string $path, string $type): FileAttributes
     {
@@ -355,7 +365,7 @@ class ObsAdapter implements FilesystemAdapter
         return $attributes;
     }
 
-    private function mapS3ObjectMetadata(array $metadata, string $path = null): StorageAttributes
+    private function mapS3ObjectMetadata(array $metadata, ?string $path = null): StorageAttributes
     {
         if ($path === null) {
             $path = $this->pathPrefixer->stripPrefix($metadata['Key'] ?? $metadata['Prefix']);
@@ -374,21 +384,11 @@ class ObsAdapter implements FilesystemAdapter
         );
     }
 
-    /**
-     * @var string[]
-     */
-    private const EXTRA_METADATA_FIELDS = [
-        'Metadata',
-        'StorageClass',
-        'ETag',
-        'VersionId',
-    ];
-
     private function extractExtraMetadata(array $metadata): array
     {
         $extracted = [];
 
-        foreach (static::EXTRA_METADATA_FIELDS as $field) {
+        foreach (self::EXTRA_METADATA_FIELDS as $field) {
             if (isset($metadata[$field]) && $metadata[$field] !== '') {
                 $extracted[$field] = $metadata[$field];
             }
@@ -438,13 +438,13 @@ class ObsAdapter implements FilesystemAdapter
      *
      * @param $path
      *
-     * @return StreamInterface
+     * @return \Psr\Http\Message\StreamInterface
      */
     protected function getObject($path): StreamInterface
     {
         $path = $this->pathPrefixer->prefixPath($path);
-        try {
 
+        try {
             $model = $this->client->getObject([
                 'Bucket' => $this->bucket,
                 'Key' => $path,
@@ -452,7 +452,7 @@ class ObsAdapter implements FilesystemAdapter
 
             return $model['Body'];
         } catch (Throwable $throwable) {
-            throw  UnableToReadFile::fromLocation($path, '', $throwable);
+            throw UnableToReadFile::fromLocation($path, '', $throwable);
         }
     }
 

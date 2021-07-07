@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-
 namespace Zing\Flysystem\Obs;
 
 use League\Flysystem\Visibility;
@@ -11,8 +10,11 @@ use Obs\ObsClient;
 class PortableVisibilityConverter implements VisibilityConverter
 {
     private const PUBLIC_GRANTEE_URI = 'http://acs.amazonaws.com/groups/global/AllUsers';
+
     private const PUBLIC_GRANTS_PERMISSION = 'READ';
+
     private const PUBLIC_ACL = ObsClient::AclPublicRead;
+
     private const PRIVATE_ACL = ObsClient::AclPrivate;
 
     /**
@@ -45,6 +47,7 @@ class PortableVisibilityConverter implements VisibilityConverter
             if ($permission !== self::PUBLIC_GRANTS_PERMISSION) {
                 continue;
             }
+
             return Visibility::PUBLIC;
         }
 

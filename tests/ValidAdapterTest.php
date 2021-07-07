@@ -9,7 +9,6 @@ use League\Flysystem\DirectoryAttributes;
 use League\Flysystem\Visibility;
 use Obs\ObsClient;
 use Zing\Flysystem\Obs\ObsAdapter;
-use function GuzzleHttp\Psr7\stream_for;
 
 class ValidAdapterTest extends TestCase
 {
@@ -80,15 +79,9 @@ class ValidAdapterTest extends TestCase
     public function testSetVisibility(): void
     {
         $this->adapter->write('fixture/file.txt', 'write', new Config());
-        self::assertSame(
-            Visibility::PRIVATE,
-            $this->adapter->visibility('fixture/file.txt')['visibility']
-        );
+        self::assertSame(Visibility::PRIVATE, $this->adapter->visibility('fixture/file.txt')['visibility']);
         $this->adapter->setVisibility('fixture/file.txt', Visibility::PUBLIC);
-        self::assertSame(
-            Visibility::PUBLIC,
-            $this->adapter->visibility('fixture/file.txt')['visibility']
-        );
+        self::assertSame(Visibility::PUBLIC, $this->adapter->visibility('fixture/file.txt')['visibility']);
     }
 
     public function testRename(): void
@@ -110,13 +103,13 @@ class ValidAdapterTest extends TestCase
 
     public function testWriteStream(): void
     {
-        $this->adapter->writeStream('fixture/file.txt', stream_for('write')->detach(), new Config());
+        $this->adapter->writeStream('fixture/file.txt', $this->streamFor('write')->detach(), new Config());
         self::assertSame('write', $this->adapter->read('fixture/file.txt'));
     }
 
     public function testDelete(): void
     {
-        $this->adapter->writeStream('fixture/file.txt', stream_for('test')->detach(), new Config());
+        $this->adapter->writeStream('fixture/file.txt', $this->streamFor('test')->detach(), new Config());
         self::assertTrue((bool) $this->adapter->fileExists('fixture/file.txt'));
         $this->adapter->delete('fixture/file.txt');
         self::assertFalse((bool) $this->adapter->fileExists('fixture/file.txt'));
@@ -140,12 +133,8 @@ class ValidAdapterTest extends TestCase
 
     public function testGetVisibility(): void
     {
-        self::assertSame(
-            Visibility::PRIVATE,
-            $this->adapter->visibility('fixture/read.txt')->visibility()
-        );
+        self::assertSame(Visibility::PRIVATE, $this->adapter->visibility('fixture/read.txt')->visibility());
     }
-
 
     public function testListContents(): void
     {
