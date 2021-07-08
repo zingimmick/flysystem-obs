@@ -202,4 +202,18 @@ class ValidAdapterTest extends TestCase
     {
         self::assertSame('read-test', file_get_contents($this->adapter->getTemporaryUrl('fixture/read.txt', 10, [])));
     }
+
+    public function testImage(): void
+    {
+        $this->adapter->write(
+            'fixture/image.png',
+            file_get_contents('https://via.placeholder.com/640x480.png'),
+            new Config()
+        );
+        $info = getimagesize($this->adapter->signUrl('fixture/image.png', 10, [
+            'x-image-process' => 'image/crop,w_200,h_100',
+        ]));
+        self::assertSame(200, $info[0]);
+        self::assertSame(100, $info[1]);
+    }
 }

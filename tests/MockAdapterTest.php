@@ -763,6 +763,7 @@ class MockAdapterTest extends TestCase
                 'Bucket' => 'test',
                 'Key' => 'fixture/read.txt',
                 'Expires' => 10,
+                'QueryParams' => [],
             ],
             ])->andReturn(new Model([
                 'SignedUrl' => 'signed-url',
@@ -778,6 +779,7 @@ class MockAdapterTest extends TestCase
                 'Bucket' => 'test',
                 'Key' => 'fixture/read.txt',
                 'Expires' => 10,
+                'QueryParams' => [],
             ],
             ])->andReturn(new Model([
                 'SignedUrl' => 'signed-url',
