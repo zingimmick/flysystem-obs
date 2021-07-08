@@ -668,12 +668,13 @@ class ObsAdapter extends AbstractAdapter
         $path = $this->applyPathPrefix($path);
 
         try {
-            $model = $this->client->createSignedUrl(array_merge([
+            $model = $this->client->createSignedUrl([
                 'Method' => $method,
                 'Bucket' => $this->bucket,
                 'Key' => $path,
                 'Expires' => $expires,
-            ], $options));
+                'QueryParams' => $options,
+            ]);
         } catch (ObsException $exception) {
             return false;
         }
