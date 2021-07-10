@@ -128,6 +128,32 @@ class ValidAdapterTest extends TestCase
         self::assertSame('write', $this->adapter->read('fixture/file.txt')['contents']);
     }
 
+    public function provideVisibilities()
+    {
+        return [[AdapterInterface::VISIBILITY_PUBLIC], [AdapterInterface::VISIBILITY_PRIVATE]];
+    }
+
+    /**
+     * @dataProvider provideVisibilities
+     *
+     * @param $visibility
+     */
+    public function testWriteStreamWithVisibility($visibility): void
+    {
+        $this->adapter->writeStream('fixture/file.txt', $this->streamFor('write')->detach(), new Config([
+            'visibility' => $visibility,
+        ]));
+        self::assertSame($visibility, $this->adapter->getVisibility('fixture/file.txt')['visibility']);
+    }
+
+    public function testWriteStreamWithExpires(): void
+    {
+        $this->adapter->writeStream('fixture/file.txt', $this->streamFor('write')->detach(), new Config([
+            'Expires' => 20,
+        ]));
+        self::assertSame('write', $this->adapter->read('fixture/file.txt')['contents']);
+    }
+
     public function testDelete(): void
     {
         $this->adapter->writeStream('fixture/file.txt', $this->streamFor('test')->detach(), new Config());

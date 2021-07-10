@@ -83,15 +83,21 @@ class MockAdapterTest extends TestCase
         self::assertSame('update', $this->adapter->read('file.txt')['contents']);
     }
 
-    private function mockPutObject($path, $body): void
+    private function mockPutObject($path, $body, $visibility = null): void
     {
+        $arg = [
+            'Bucket' => 'test',
+            'Key' => $path,
+            'Body' => $body,
+        ];
+        if ($visibility !== null) {
+            $arg = array_merge($arg, [
+                'visibility' => $visibility === AdapterInterface::VISIBILITY_PUBLIC ? 'public' : 'private',
+                'ACL' => $visibility === AdapterInterface::VISIBILITY_PUBLIC ? 'public-read' : 'private',
+            ]);
+        }
         $this->client->shouldReceive('putObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => $path,
-                'Body' => $body,
-            ],
-            ])->andReturn(new Model());
+            ->withArgs([$arg])->andReturn(new Model());
     }
 
     public function testCopy(): void
@@ -417,6 +423,112 @@ class MockAdapterTest extends TestCase
     {
         $this->mockPutObject('file.txt', 'write');
         $this->adapter->writeStream('file.txt', $this->streamFor('write')->detach(), new Config());
+        $this->mockGetObject('file.txt', 'write');
+        self::assertSame('write', $this->adapter->read('file.txt')['contents']);
+    }
+
+    public function provideVisibilities()
+    {
+        return [[AdapterInterface::VISIBILITY_PUBLIC], [AdapterInterface::VISIBILITY_PRIVATE]];
+    }
+
+    private function mockGetVisibility($path, $visibility): void
+    {
+        if ($visibility === AdapterInterface::VISIBILITY_PRIVATE) {
+            $model = new Model([
+                'ContentLength' => '508',
+                'Date' => 'Mon, 31 May 2021 06:52:31 GMT',
+                'RequestId' => '00000179C132050392179DB73EB80FFF',
+                'Id2' => '32AAAQAAEAABAAAQAAEAABAAAQAAEAABCS7X7CQo6PJncbE/Rw7pAST9+g4eSFFj',
+                'Reserved' => 'amazon, aws and amazon web services are trademarks or registered trademarks of Amazon Technologies, Inc',
+                'Owner' => [
+                    'DisplayName' => 'zingimmick',
+                    'ID' => '0c85ae1126000f380f21c00e77706640',
+                ],
+                'Grants' => [[
+                    'Grantee' => [
+                        'DisplayName' => 'zingimmick',
+                        'ID' => '0c85ae1126000f380f21c00e77706640',
+                        'URI' => '',
+                        'Permission' => 'FULL_CONTROL',
+                    ],
+                    'VersionId' => '',
+                    'HttpStatusCode' => 200,
+                    'Reason' => 'OK',
+                ],
+                ],
+            ]);
+        } else {
+            $model = new Model([
+                'ContentLength' => '700',
+                'Date' => 'Mon, 31 May 2021 06:52:31 GMT',
+                'RequestId' => '00000179C132055792179EAE74DFD216',
+                'Id2' => '32AAAQAAEAABAAAQAAEAABAAAQAAEAABCSdxGpEHY4PlHymn9n5tgYbtJp4AkMer',
+                'Reserved' => 'amazon, aws and amazon web services are trademarks or registered trademarks of Amazon Technologies, Inc',
+                'Owner' => [
+                    'DisplayName' => 'zingimmick',
+                    'ID' => '0c85ae1126000f380f21c00e77706640',
+                ],
+                'Grants' => [
+                    [
+                        'Grantee' => [
+                            'DisplayName' => 'zingimmick',
+                            'ID' => '0c85ae1126000f380f21c00e77706640',
+                            'URI' => '',
+                        ],
+                        'Permission' => 'FULL_CONTROL',
+                    ],
+                    [
+                        'Grantee' => [
+                            'DisplayName' => '',
+                            'ID' => '',
+                            'URI' => 'http://acs.amazonaws.com/groups/global/AllUsers',
+                        ],
+                        'Permission' => 'READ',
+                    ],
+                ],
+                'VersionId' => '',
+                'HttpStatusCode' => 200,
+                'Reason' => 'OK',
+            ]);
+        }//end if
+        $this->client->shouldReceive('getObjectAcl')
+            ->withArgs([[
+                'Bucket' => 'test',
+                'Key' => $path,
+            ],
+            ])
+            ->andReturn($model);
+    }
+
+    /**
+     * @dataProvider provideVisibilities
+     *
+     * @param $visibility
+     */
+    public function testWriteStreamWithVisibility($visibility): void
+    {
+        $this->mockPutObject('file.txt', 'write', $visibility);
+        $this->adapter->writeStream('file.txt', $this->streamFor('write')->detach(), new Config([
+            'visibility' => $visibility,
+        ]));
+        $this->mockGetVisibility('file.txt', $visibility);
+        self::assertSame($visibility, $this->adapter->getVisibility('file.txt')['visibility']);
+    }
+
+    public function testWriteStreamWithExpires(): void
+    {
+        $this->client->shouldReceive('putObject')
+            ->withArgs([[
+                'Expires' => 20,
+                'Bucket' => 'test',
+                'Key' => 'file.txt',
+                'Body' => 'write',
+            ],
+            ])->andReturn(new Model());
+        $this->adapter->writeStream('file.txt', $this->streamFor('write')->detach(), new Config([
+            'Expires' => 20,
+        ]));
         $this->mockGetObject('file.txt', 'write');
         self::assertSame('write', $this->adapter->read('file.txt')['contents']);
     }
