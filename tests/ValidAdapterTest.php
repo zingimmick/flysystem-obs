@@ -154,6 +154,14 @@ class ValidAdapterTest extends TestCase
         self::assertSame('write', $this->adapter->read('fixture/file.txt')['contents']);
     }
 
+    public function testWriteStreamWithMimetype(): void
+    {
+        $this->adapter->writeStream('fixture/file.txt', $this->streamFor('write')->detach(), new Config([
+            'mimetype' => 'image/png',
+        ]));
+        self::assertSame('image/png', $this->adapter->getMimetype('fixture/file.txt')['mimetype']);
+    }
+
     public function testDelete(): void
     {
         $this->adapter->writeStream('fixture/file.txt', $this->streamFor('test')->detach(), new Config());

@@ -533,6 +533,56 @@ class MockAdapterTest extends TestCase
         self::assertSame('write', $this->adapter->read('file.txt')['contents']);
     }
 
+    public function testWriteStreamWithMimetype(): void
+    {
+        $this->client->shouldReceive('putObject')
+            ->withArgs([[
+                'mimetype' => 'image/png',
+                'ContentType' => 'image/png',
+                'Bucket' => 'test',
+                'Key' => 'file.txt',
+                'Body' => 'write',
+            ],
+            ])->andReturn(new Model());
+        $this->adapter->writeStream('file.txt', $this->streamFor('write')->detach(), new Config([
+            'mimetype' => 'image/png',
+        ]));
+        $this->client->shouldReceive('getObjectMetadata')
+            ->once()
+            ->withArgs([[
+                'Bucket' => 'test',
+                'Key' => 'file.txt',
+            ],
+            ])->andReturn(new Model([
+                'ContentLength' => 9,
+                'Date' => 'Mon, 31 May 2021 06:52:32 GMT',
+                'RequestId' => '00000179C13207FD9217A8324EE5B315',
+                'Id2' => '32AAAQAAEAABAAAQAAEAABAAAQAAEAABCSOcy2Ri+ilXxrwc5JIVg6ifOFbyOU/p',
+                'Reserved' => 'amazon, aws and amazon web services are trademarks or registered trademarks of Amazon Technologies, Inc',
+                'Expiration' => '',
+                'LastModified' => 'Mon, 31 May 2021 06:52:32 GMT',
+                'ContentType' => 'image/png',
+                'ETag' => '"098f6bcd4621d373cade4e832627b4f6"',
+                'VersionId' => '',
+                'WebsiteRedirectLocation' => '',
+                'StorageClass' => 'STANDARD_IA',
+                'AllowOrigin' => '',
+                'MaxAgeSeconds' => '',
+                'ExposeHeader' => '',
+                'AllowMethod' => '',
+                'AllowHeader' => '',
+                'Restore' => '',
+                'SseKms' => '',
+                'SseKmsKey' => '',
+                'SseC' => '',
+                'SseCKeyMd5' => '',
+                'Metadata' => [],
+                'HttpStatusCode' => 200,
+                'Reason' => 'OK',
+            ]));
+        self::assertSame('image/png', $this->adapter->getMimetype('file.txt')['mimetype']);
+    }
+
     public function testDelete(): void
     {
         $this->mockPutObject('file.txt', 'write');
