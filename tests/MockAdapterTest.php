@@ -860,9 +860,9 @@ class MockAdapterTest extends TestCase
                 'NextMarker' => '',
                 'Contents' => [[
                     'Key' => 'a/b/file.txt',
-                    'LastModified' => '2021-05-31T15:23:24.217Z',
+                    'LastModified' => 'Mon, 31 May 2021 06:52:32 GMT',
                     'ETag' => 'd41d8cd98f00b204e9800998ecf8427e',
-                    'Size' => 0,
+                    'Size' => 9,
                     'StorageClass' => 'STANDARD_IA',
                     'Owner' => [
                         'DisplayName' => 'zingimmick',
@@ -882,7 +882,7 @@ class MockAdapterTest extends TestCase
         $this->mockGetMetadata('a/b/file.txt');
         self::assertSame([[
             'type' => 'file',
-            'mimetype' => 'text/plain',
+            'mimetype' => null,
             'path' => 'a/b/file.txt',
             'timestamp' => 1622443952,
             'size' => 9,

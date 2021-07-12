@@ -412,10 +412,7 @@ class ObsAdapter extends AbstractAdapter
         $result = $this->listDirObjects($directory, $recursive);
 
         foreach ($result['objects'] as $files) {
-            $metadata = $this->getMetadata($files['Key']);
-            if ($metadata === false) {
-                continue;
-            }
+            $metadata = $this->mapObjectMetadata($files);
             $list[] = $metadata;
         }
 
@@ -427,6 +424,27 @@ class ObsAdapter extends AbstractAdapter
         }
 
         return $list;
+    }
+
+    private function mapObjectMetadata($metadata, $path = null)
+    {
+        if ($path === null) {
+            $path = $metadata['Key'] ?? $metadata['Prefix'];
+        }
+        if ($this->isOnlyDir($this->removePathPrefix($path))) {
+            return [
+                'type' => 'dir',
+                'path' => rtrim($this->removePathPrefix($path), '/'),
+            ];
+        }
+
+        return [
+            'type' => 'file',
+            'mimetype' => $metadata['ContentType'] ?? null,
+            'path' => $this->removePathPrefix($path),
+            'timestamp' => strtotime($metadata['LastModified']),
+            'size' => $metadata['ContentLength'] ?? $metadata['Size'] ?? null,
+        ];
     }
 
     /**
@@ -448,20 +466,8 @@ class ObsAdapter extends AbstractAdapter
         } catch (ObsException $exception) {
             return false;
         }
-        if ($this->isOnlyDir($this->removePathPrefix($path))) {
-            return [
-                'type' => 'dir',
-                'path' => rtrim($this->removePathPrefix($path), '/'),
-            ];
-        }
 
-        return [
-            'type' => 'file',
-            'mimetype' => $metadata['ContentType'],
-            'path' => $this->removePathPrefix($path),
-            'timestamp' => strtotime($metadata['LastModified']),
-            'size' => $metadata['ContentLength'],
-        ];
+        return $this->mapObjectMetadata($metadata, $path);
     }
 
     /**
