@@ -100,8 +100,6 @@ class ObsAdapter implements FilesystemAdapter
      */
     public function write(string $path, string $contents, Config $config): void
     {
-        $path = $this->pathPrefixer->prefixPath($path);
-
         $options = $this->createOptionsFromConfig($config);
         if (! isset($options['ACL'])) {
             $visibility = $config->get(Config::OPTION_VISIBILITY);
@@ -121,7 +119,7 @@ class ObsAdapter implements FilesystemAdapter
         try {
             $this->client->putObject(array_merge($options, [
                 'Bucket' => $this->bucket,
-                'Key' => $path,
+                'Key' => $this->pathPrefixer->prefixPath($path),
                 'Body' => $contents,
             ]));
         } catch (ObsException $obsException) {
@@ -185,12 +183,10 @@ class ObsAdapter implements FilesystemAdapter
      */
     public function delete(string $path): void
     {
-        $path = $this->pathPrefixer->prefixPath($path);
-
         try {
             $this->client->deleteObject([
                 'Bucket' => $this->bucket,
-                'Key' => $path,
+                'Key' => $this->pathPrefixer->prefixPath($path),
             ]);
         } catch (ObsException $obsException) {
             throw UnableToDeleteFile::atLocation($path, '', $obsException);
@@ -440,12 +436,10 @@ class ObsAdapter implements FilesystemAdapter
      */
     protected function getObject($path): StreamInterface
     {
-        $path = $this->pathPrefixer->prefixPath($path);
-
         try {
             $model = $this->client->getObject([
                 'Bucket' => $this->bucket,
-                'Key' => $path,
+                'Key' => $this->pathPrefixer->prefixPath($path),
             ]);
 
             return $model['Body'];
