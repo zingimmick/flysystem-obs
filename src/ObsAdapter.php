@@ -374,7 +374,7 @@ class ObsAdapter implements FilesystemAdapter
 
         return new FileAttributes(
             $path,
-            $metadata['ContentLength'] ?? null,
+            $metadata['ContentLength'] ?? $metadata['Size'] ?? null,
             null,
             strtotime($metadata['LastModified']),
             $metadata['ContentType'] ?? null,

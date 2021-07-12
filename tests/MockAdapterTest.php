@@ -614,7 +614,7 @@ class MockAdapterTest extends TestCase
                     'Key' => 'a/b/file.txt',
                     'LastModified' => '2021-05-31T15:23:24.217Z',
                     'ETag' => 'd41d8cd98f00b204e9800998ecf8427e',
-                    'Size' => 0,
+                    'Size' => 9,
                     'StorageClass' => 'STANDARD_IA',
                     'Owner' => [
                         'DisplayName' => 'zingimmick',
@@ -634,7 +634,7 @@ class MockAdapterTest extends TestCase
         $this->mockGetMetadata('a/b/file.txt');
         self::assertEquals([new FileAttributes(
             'a/b/file.txt',
-            null,
+            9,
             null,
             1622474604,
             null,
