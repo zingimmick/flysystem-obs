@@ -329,7 +329,7 @@ class ObsAdapter implements FilesystemAdapter
         $result = $this->listDirObjects($directory, $deep);
 
         foreach ($result['objects'] as $files) {
-            yield $this->mapS3ObjectMetadata($files);
+            yield $this->mapObjectMetadata($files);
         }
         foreach ($result['prefix'] as $dir) {
             yield new DirectoryAttributes($dir);
@@ -346,17 +346,15 @@ class ObsAdapter implements FilesystemAdapter
      */
     private function getMetadata(string $path, string $type): FileAttributes
     {
-        $path = $this->pathPrefixer->prefixPath($path);
-
         try {
             $metadata = $this->client->getObjectMetadata([
                 'Bucket' => $this->bucket,
-                'Key' => $path,
+                'Key' => $this->pathPrefixer->prefixPath($path),
             ]);
         } catch (ObsException $exception) {
             throw UnableToRetrieveMetadata::create($path, $type, '', $exception);
         }
-        $attributes = $this->mapS3ObjectMetadata($metadata->toArray(), $path);
+        $attributes = $this->mapObjectMetadata($metadata->toArray(), $path);
 
         if (! $attributes instanceof FileAttributes) {
             throw UnableToRetrieveMetadata::create($path, $type);
@@ -365,7 +363,7 @@ class ObsAdapter implements FilesystemAdapter
         return $attributes;
     }
 
-    private function mapS3ObjectMetadata(array $metadata, ?string $path = null): StorageAttributes
+    private function mapObjectMetadata(array $metadata, ?string $path = null): StorageAttributes
     {
         if ($path === null) {
             $path = $this->pathPrefixer->stripPrefix($metadata['Key'] ?? $metadata['Prefix']);
@@ -375,7 +373,7 @@ class ObsAdapter implements FilesystemAdapter
         }
 
         return new FileAttributes(
-            $this->pathPrefixer->stripPrefix($path),
+            $path,
             $metadata['ContentLength'] ?? null,
             null,
             strtotime($metadata['LastModified']),
