@@ -429,7 +429,7 @@ class ObsAdapter extends AbstractAdapter
     private function mapObjectMetadata($metadata, $path = null)
     {
         if ($path === null) {
-            $path = $this->removePathPrefix($metadata['Key'] ?? $metadata['Prefix']);
+            $path = $metadata['Key'] ?? $metadata['Prefix'];
         }
         if ($this->isOnlyDir($this->removePathPrefix($path))) {
             return [
