@@ -29,13 +29,16 @@ $config = [
    'secret' => 'aW52YWxpZC1zZWNyZXQ=',
    'bucket' => 'test',
    'endpoint' => 'obs.cn-east-3.myhuaweicloud.com',
-   'options' => [
-        'url' => 'https://oss.cdn.com',
-        'bucket_endpoint' => false
-    ]
+   'is_cname' => true
 ];
+
+$options = [
+    'url' => 'https://oss.cdn.com',
+    'bucket_endpoint' => $config['is_cname'] ?? false
+];
+
 $client = new ObsClient($config);
-$adapter = new ObsAdapter($client, $config['endpoint'], $config['bucket'], $prefix, $config['options']);
+$adapter = new ObsAdapter($client, $config['endpoint'], $config['bucket'], $prefix, $options);
 $flysystem = new Filesystem($adapter);
 ```
 
