@@ -326,7 +326,7 @@ class ObsAdapter extends AbstractAdapter
             if (! isset($grant['Grantee']['URI'])) {
                 continue;
             }
-            if ($grant['Grantee']['URI'] !== self::PUBLIC_GRANT_URI) {
+            if (! in_array($grant['Grantee']['URI'], [self::PUBLIC_GRANT_URI, ObsClient::AllUsers], true)) {
                 continue;
             }
             if ($grant['Permission'] !== 'READ') {
