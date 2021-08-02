@@ -41,7 +41,7 @@ class PortableVisibilityConverter implements VisibilityConverter
         foreach ($grants as $grant) {
             $granteeUri = $grant['Grantee']['URI'] ?? null;
             $permission = $grant['Permission'] ?? null;
-            if ($granteeUri !== self::PUBLIC_GRANTEE_URI) {
+            if (! in_array($granteeUri, [self::PUBLIC_GRANTEE_URI, ObsClient::AllUsers], true)) {
                 continue;
             }
             if ($permission !== self::PUBLIC_GRANTS_PERMISSION) {
