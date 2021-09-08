@@ -96,6 +96,7 @@ class MockAdapterTest extends TestCase
                 'ACL' => $visibility === AdapterInterface::VISIBILITY_PUBLIC ? 'public-read' : 'private',
             ]);
         }
+
         $this->client->shouldReceive('putObject')
             ->withArgs([$arg])->andReturn(new Model());
     }
@@ -492,6 +493,7 @@ class MockAdapterTest extends TestCase
                 'Reason' => 'OK',
             ]);
         }//end if
+
         $this->client->shouldReceive('getObjectAcl')
             ->withArgs([[
                 'Bucket' => 'test',
