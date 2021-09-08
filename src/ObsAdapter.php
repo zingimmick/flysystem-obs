@@ -326,9 +326,11 @@ class ObsAdapter extends AbstractAdapter
             if (! isset($grant['Grantee']['URI'])) {
                 continue;
             }
+
             if (! in_array($grant['Grantee']['URI'], [self::PUBLIC_GRANT_URI, ObsClient::AllUsers], true)) {
                 continue;
             }
+
             if ($grant['Permission'] !== 'READ') {
                 continue;
             }
@@ -431,6 +433,7 @@ class ObsAdapter extends AbstractAdapter
         if ($path === null) {
             $path = $metadata['Key'] ?? $metadata['Prefix'];
         }
+
         if ($this->isOnlyDir($this->removePathPrefix($path))) {
             return [
                 'type' => 'dir',
@@ -562,6 +565,7 @@ class ObsAdapter extends AbstractAdapter
         if (strpos($endpoint, 'http') !== 0) {
             $endpoint = 'https://' . $endpoint;
         }
+
         $url = parse_url($endpoint);
         $domain = $url['host'];
         if (! ($this->options['bucket_endpoint'] ?? false)) {
@@ -704,6 +708,7 @@ class ObsAdapter extends AbstractAdapter
         if ($url === false) {
             return false;
         }
+
         $uri = new Uri($url);
         $url = $this->options['temporary_url'] ?? null;
         if ($url !== null) {
@@ -743,6 +748,7 @@ class ObsAdapter extends AbstractAdapter
             if (! $config->has($option)) {
                 continue;
             }
+
             $options[$option] = $config->get($option);
         }
 
