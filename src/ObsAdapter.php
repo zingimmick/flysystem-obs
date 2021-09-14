@@ -615,49 +615,65 @@ class ObsAdapter extends AbstractAdapter
         $result = [];
 
         while (true) {
-            $options = [
+            $model = $this->client->listObjects([
                 'Bucket' => $this->bucket,
                 'Delimiter' => $delimiter,
                 'Prefix' => $dirname,
                 'MaxKeys' => $maxKeys,
                 'Marker' => $nextMarker,
-            ];
-
-            $model = $this->client->listObjects($options);
+            ]);
 
             $nextMarker = $model['NextMarker'];
             $objects = $model['Contents'];
             $prefixes = $model['CommonPrefixes'];
-            if (! empty($objects)) {
-                foreach ($objects as $object) {
-                    $result['objects'][] = array_merge($object, [
-                        'Prefix' => $dirname,
-                    ]);
-                }
-            } else {
-                $result['objects'] = [];
-            }
-
-            if (! empty($prefixes)) {
-                foreach ($prefixes as $prefix) {
-                    $result['prefix'][] = $prefix['Prefix'];
-                }
-            } else {
-                $result['prefix'] = [];
-            }
-
-            // Recursive directory
-            if ($recursive) {
-                foreach ($result['prefix'] as $prefix) {
-                    $next = $this->listDirObjects($prefix, $recursive);
-                    $result['objects'] = array_merge($result['objects'], $next['objects']);
-                }
-            }
+            $result = $this->processObjects($result, $objects, $dirname);
+            $result = $this->processPrefixes($result, $prefixes);
+            $result = $this->processRecursive($result, $recursive);
 
             if ($nextMarker === '') {
                 break;
             }
-        }//end while
+        }
+
+        return $result;
+    }
+
+    private function processRecursive(array $result, $recursive): array
+    {
+        if ($recursive) {
+            foreach ($result['prefix'] as $prefix) {
+                $next = $this->listDirObjects($prefix, $recursive);
+                $result['objects'] = array_merge($result['objects'], $next['objects']);
+            }
+        }
+
+        return $result;
+    }
+
+    private function processObjects(array $result, $objects, $dirname): array
+    {
+        if (! empty($objects)) {
+            foreach ($objects as $object) {
+                $result['objects'][] = array_merge($object, [
+                    'Prefix' => $dirname,
+                ]);
+            }
+        } else {
+            $result['objects'] = [];
+        }
+
+        return $result;
+    }
+
+    private function processPrefixes(array $result, $prefixes): array
+    {
+        if (! empty($prefixes)) {
+            foreach ($prefixes as $prefix) {
+                $result['prefix'][] = $prefix['Prefix'];
+            }
+        } else {
+            $result['prefix'] = [];
+        }
 
         return $result;
     }

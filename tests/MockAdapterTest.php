@@ -435,64 +435,47 @@ class MockAdapterTest extends TestCase
 
     private function mockGetVisibility($path, $visibility): void
     {
-        if ($visibility === AdapterInterface::VISIBILITY_PRIVATE) {
-            $model = new Model([
-                'ContentLength' => '508',
-                'Date' => 'Mon, 31 May 2021 06:52:31 GMT',
-                'RequestId' => '00000179C132050392179DB73EB80FFF',
-                'Id2' => '32AAAQAAEAABAAAQAAEAABAAAQAAEAABCS7X7CQo6PJncbE/Rw7pAST9+g4eSFFj',
-                'Reserved' => 'amazon, aws and amazon web services are trademarks or registered trademarks of Amazon Technologies, Inc',
-                'Owner' => [
-                    'DisplayName' => 'zingimmick',
-                    'ID' => '0c85ae1126000f380f21c00e77706640',
-                ],
-                'Grants' => [[
+        $model = new Model([
+            'ContentLength' => '508',
+            'Date' => 'Mon, 31 May 2021 06:52:31 GMT',
+            'RequestId' => '00000179C132050392179DB73EB80FFF',
+            'Id2' => '32AAAQAAEAABAAAQAAEAABAAAQAAEAABCS7X7CQo6PJncbE/Rw7pAST9+g4eSFFj',
+            'Reserved' => 'amazon, aws and amazon web services are trademarks or registered trademarks of Amazon Technologies, Inc',
+            'Owner' => [
+                'DisplayName' => 'zingimmick',
+                'ID' => '0c85ae1126000f380f21c00e77706640',
+            ],
+            'Grants' => $visibility === AdapterInterface::VISIBILITY_PRIVATE ? [
+                [
                     'Grantee' => [
                         'DisplayName' => 'zingimmick',
                         'ID' => '0c85ae1126000f380f21c00e77706640',
                         'URI' => '',
-                        'Permission' => 'FULL_CONTROL',
                     ],
-                    'VersionId' => '',
-                    'HttpStatusCode' => 200,
-                    'Reason' => 'OK',
+                    'Permission' => 'FULL_CONTROL',
                 ],
-                ],
-            ]);
-        } else {
-            $model = new Model([
-                'ContentLength' => '700',
-                'Date' => 'Mon, 31 May 2021 06:52:31 GMT',
-                'RequestId' => '00000179C132055792179EAE74DFD216',
-                'Id2' => '32AAAQAAEAABAAAQAAEAABAAAQAAEAABCSdxGpEHY4PlHymn9n5tgYbtJp4AkMer',
-                'Reserved' => 'amazon, aws and amazon web services are trademarks or registered trademarks of Amazon Technologies, Inc',
-                'Owner' => [
-                    'DisplayName' => 'zingimmick',
-                    'ID' => '0c85ae1126000f380f21c00e77706640',
-                ],
-                'Grants' => [
-                    [
-                        'Grantee' => [
-                            'DisplayName' => 'zingimmick',
-                            'ID' => '0c85ae1126000f380f21c00e77706640',
-                            'URI' => '',
-                        ],
-                        'Permission' => 'FULL_CONTROL',
+            ] : [
+                [
+                    'Grantee' => [
+                        'DisplayName' => 'zingimmick',
+                        'ID' => '0c85ae1126000f380f21c00e77706640',
+                        'URI' => '',
                     ],
-                    [
-                        'Grantee' => [
-                            'DisplayName' => '',
-                            'ID' => '',
-                            'URI' => 'http://acs.amazonaws.com/groups/global/AllUsers',
-                        ],
-                        'Permission' => 'READ',
-                    ],
+                    'Permission' => 'FULL_CONTROL',
                 ],
-                'VersionId' => '',
-                'HttpStatusCode' => 200,
-                'Reason' => 'OK',
-            ]);
-        }//end if
+                [
+                    'Grantee' => [
+                        'DisplayName' => '',
+                        'ID' => '',
+                        'URI' => 'http://acs.amazonaws.com/groups/global/AllUsers',
+                    ],
+                    'Permission' => 'READ',
+                ],
+            ],
+            'VersionId' => '',
+            'HttpStatusCode' => 200,
+            'Reason' => 'OK',
+        ]);
 
         $this->client->shouldReceive('getObjectAcl')
             ->withArgs([[
