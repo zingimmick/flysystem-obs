@@ -15,6 +15,18 @@ use Zing\Flysystem\Obs\Plugins\TemporaryUrl;
 
 class InvalidAdapterTest extends TestCase
 {
+    /**
+     * @var array<string, string>
+     */
+    private const CONFIG = [
+        'key' => 'aW52YWxpZC1rZXk=',
+        'secret' => 'aW52YWxpZC1zZWNyZXQ=',
+        'bucket' => 'test',
+        'endpoint' => 'obs.cn-east-3.myhuaweicloud.com',
+        'path_style' => '',
+        'region' => '',
+    ];
+
     private $adapter;
 
     private $client;
@@ -23,16 +35,8 @@ class InvalidAdapterTest extends TestCase
     {
         parent::setUp();
 
-        $config = [
-            'key' => 'aW52YWxpZC1rZXk=',
-            'secret' => 'aW52YWxpZC1zZWNyZXQ=',
-            'bucket' => 'test',
-            'endpoint' => 'obs.cn-east-3.myhuaweicloud.com',
-            'path_style' => '',
-            'region' => '',
-        ];
-        $this->client = new ObsClient($config);
-        $this->adapter = new ObsAdapter($this->client, $config['endpoint'], $config['bucket']);
+        $this->client = new ObsClient(self::CONFIG);
+        $this->adapter = new ObsAdapter($this->client, self::CONFIG['endpoint'], self::CONFIG['bucket']);
     }
 
     public function testUpdate(): void
