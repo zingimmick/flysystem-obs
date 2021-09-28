@@ -13,6 +13,9 @@ use Obs\ObsException;
 
 class ObsAdapter extends AbstractAdapter
 {
+    /**
+     * @var string
+     */
     public const PUBLIC_GRANT_URI = 'http://acs.amazonaws.com/groups/global/AllUsers';
 
     /**
@@ -41,11 +44,7 @@ class ObsAdapter extends AbstractAdapter
     protected $client;
 
     /**
-     * @param \Obs\ObsClient $client
-     * @param string $endpoint
-     * @param string $bucket
      * @param string $prefix
-     * @param array $options
      */
     public function __construct(ObsClient $client, string $endpoint, string $bucket, $prefix = '', array $options = [])
     {
@@ -572,7 +571,7 @@ class ObsAdapter extends AbstractAdapter
             $domain = $this->bucket . '.' . $domain;
         }
 
-        $domain = "{$url['scheme']}://{$domain}";
+        $domain = sprintf('%s://%s', $url['scheme'], $domain);
 
         return rtrim($domain, '/') . '/';
     }
@@ -683,7 +682,6 @@ class ObsAdapter extends AbstractAdapter
      *
      * @param $path
      * @param \DateTimeInterface|int $expiration
-     * @param array $options
      * @param mixed $method
      *
      * @return bool|string
@@ -713,7 +711,6 @@ class ObsAdapter extends AbstractAdapter
      *
      * @param string $path
      * @param \DateTimeInterface|int $expiration
-     * @param array $options
      * @param mixed $method
      *
      * @return bool|string
@@ -736,8 +733,6 @@ class ObsAdapter extends AbstractAdapter
 
     /**
      * Get options from the config.
-     *
-     * @param \League\Flysystem\Config $config
      *
      * @return array
      */
