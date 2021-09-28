@@ -19,6 +19,16 @@ class ObsAdapter extends AbstractAdapter
     public const PUBLIC_GRANT_URI = 'http://acs.amazonaws.com/groups/global/AllUsers';
 
     /**
+     * @var string
+     */
+    private const DELIMITER = '/';
+
+    /**
+     * @var int
+     */
+    private const MAX_KEYS = 1000;
+
+    /**
      * @var array
      */
     protected static $metaOptions = ['ACL', 'Expires', 'StorageClass'];
@@ -607,18 +617,16 @@ class ObsAdapter extends AbstractAdapter
      */
     public function listDirObjects($dirname = '', $recursive = false)
     {
-        $delimiter = '/';
         $nextMarker = '';
-        $maxKeys = 1000;
 
         $result = [];
 
         while (true) {
             $model = $this->client->listObjects([
                 'Bucket' => $this->bucket,
-                'Delimiter' => $delimiter,
+                'Delimiter' => self::DELIMITER,
                 'Prefix' => $dirname,
-                'MaxKeys' => $maxKeys,
+                'MaxKeys' => self::MAX_KEYS,
                 'Marker' => $nextMarker,
             ]);
 
