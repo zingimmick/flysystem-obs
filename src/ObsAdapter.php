@@ -169,8 +169,6 @@ class ObsAdapter extends AbstractAdapter
      * @param string $path
      * @param string $newpath
      *
-     * @throws \Obs\ObsException
-     *
      * @return bool
      */
     public function rename($path, $newpath)
@@ -214,8 +212,6 @@ class ObsAdapter extends AbstractAdapter
      *
      * @param string $path
      *
-     * @throws \Obs\ObsException
-     *
      * @return bool
      */
     public function delete($path)
@@ -238,8 +234,6 @@ class ObsAdapter extends AbstractAdapter
      * Delete a directory.
      *
      * @param string $dirname
-     *
-     * @throws \Obs\ObsException
      *
      * @return bool
      */
@@ -411,8 +405,6 @@ class ObsAdapter extends AbstractAdapter
      *
      * @param string $directory
      * @param bool $recursive
-     *
-     * @throws \Obs\ObsException
      *
      * @return array
      */
@@ -610,8 +602,6 @@ class ObsAdapter extends AbstractAdapter
      *
      * @param string $dirname
      * @param bool $recursive
-     *
-     * @throws \Obs\ObsException
      *
      * @return array
      */
