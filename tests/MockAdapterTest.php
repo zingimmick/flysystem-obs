@@ -144,7 +144,7 @@ class MockAdapterTest extends TestCase
                     'Reason' => 'OK',
                 ]
             ));
-        self::assertSame(
+        self::assertEquals(
             [new DirectoryAttributes('path')],
             iterator_to_array($this->adapter->listContents('path', false))
         );
@@ -778,7 +778,7 @@ class MockAdapterTest extends TestCase
                 'Reason' => 'OK',
             ]));
         $this->mockGetMetadata('a/b/file.txt');
-        self::assertSame([new FileAttributes(
+        self::assertEquals([new FileAttributes(
             'a/b/file.txt',
             9,
             null,

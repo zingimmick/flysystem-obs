@@ -29,9 +29,6 @@ $config = [
    'secret' => 'aW52YWxpZC1zZWNyZXQ=',
    'bucket' => 'test',
    'endpoint' => 'obs.cn-east-3.myhuaweicloud.com',
-   'options' => [
-        'url' => 'https://oss.cdn.com'
-    ]
 ];
 $client = new ObsClient($config);
 $adapter = new ObsAdapter($client, $config['bucket'], $prefix, null, null, $config['options']);
