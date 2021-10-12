@@ -13,7 +13,6 @@ use Obs\Internal\Common\Model;
 use Obs\ObsClient;
 use Obs\ObsException;
 use Zing\Flysystem\Obs\ObsAdapter;
-use Zing\Flysystem\Obs\PortableVisibilityConverter;
 
 class MockAdapterTest extends TestCase
 {
@@ -31,7 +30,7 @@ class MockAdapterTest extends TestCase
         $this->adapter->write('fixture/read.txt', 'read-test', new Config());
     }
 
-    private function mockPutObject($path, $body,$visibility=null): void
+    private function mockPutObject($path, $body, $visibility = null): void
     {
         $arg = [
             'ContentType' => 'text/plain',
@@ -44,6 +43,7 @@ class MockAdapterTest extends TestCase
                 'ACL' => $visibility === Visibility::PUBLIC ? 'public-read' : 'private',
             ]);
         }
+
         $this->client->shouldReceive('putObject')
             ->withArgs([$arg])->andReturn(new Model());
     }
@@ -144,7 +144,7 @@ class MockAdapterTest extends TestCase
                     'Reason' => 'OK',
                 ]
             ));
-        self::assertEquals(
+        self::assertSame(
             [new DirectoryAttributes('path')],
             iterator_to_array($this->adapter->listContents('path', false))
         );
@@ -778,7 +778,7 @@ class MockAdapterTest extends TestCase
                 'Reason' => 'OK',
             ]));
         $this->mockGetMetadata('a/b/file.txt');
-        self::assertEquals([new FileAttributes(
+        self::assertSame([new FileAttributes(
             'a/b/file.txt',
             9,
             null,

@@ -28,6 +28,9 @@ use Throwable;
 
 class ObsAdapter implements FilesystemAdapter
 {
+    /**
+     * @var string[]
+     */
     private const EXTRA_METADATA_FIELDS = ['Metadata', 'StorageClass', 'ETag', 'VersionId'];
 
     /**
@@ -43,7 +46,7 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * @var array
      */
-    protected static $metaOptions = ['ACL', 'Expires', 'StorageClass','ContentType'];
+    protected static $metaOptions = ['ACL', 'Expires', 'StorageClass', 'ContentType'];
 
     /**
      * @var string
@@ -75,14 +78,6 @@ class ObsAdapter implements FilesystemAdapter
      */
     private $mimeTypeDetector;
 
-    /**
-     * @param \Obs\ObsClient $client
-     * @param string $bucket
-     * @param string $prefix
-     * @param \Zing\Flysystem\Obs\VisibilityConverter|null $visibility
-     * @param \League\MimeTypeDetection\MimeTypeDetector|null $mimeTypeDetector
-     * @param array $options
-     */
     public function __construct(
         ObsClient $client,
         string $bucket,
@@ -102,10 +97,6 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * write a file.
      *
-     * @param string $path
-     * @param string $contents
-     * @param \League\Flysystem\Config $config
-     *
      * @return array|false
      */
     public function write(string $path, string $contents, Config $config): void
@@ -117,6 +108,7 @@ class ObsAdapter implements FilesystemAdapter
                 $options['ACL'] = $options['ACL'] ?? $this->visibilityConverter->visibilityToAcl($visibility);
             }
         }
+
         $shouldDetermineMimetype = $contents !== '' && ! array_key_exists('ContentType', $options);
 
         if ($shouldDetermineMimetype) {
@@ -139,9 +131,6 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * @param resource $contents
-     *
-     * @throws \League\Flysystem\UnableToWriteFile
-     * @throws \League\Flysystem\FilesystemException
      */
     public function writeStream(string $path, $contents, Config $config): void
     {
@@ -150,10 +139,6 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * rename a file.
-     *
-     * @param string $source
-     * @param string $destination
-     * @param \League\Flysystem\Config $config
      */
     public function move(string $source, string $destination, Config $config): void
     {
@@ -167,10 +152,6 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * copy a file.
-     *
-     * @param string $source
-     * @param string $destination
-     * @param \League\Flysystem\Config $config
      */
     public function copy(string $source, string $destination, Config $config): void
     {
@@ -188,8 +169,6 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * delete a file.
-     *
-     * @param string $path
      */
     public function delete(string $path): void
     {
@@ -205,8 +184,6 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * Delete a directory.
-     *
-     * @param string $path
      */
     public function deleteDirectory(string $path): void
     {
@@ -218,9 +195,6 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * create a directory.
-     *
-     * @param string $path
-     * @param \League\Flysystem\Config $config
      */
     public function createDirectory(string $path, Config $config): void
     {
@@ -233,9 +207,6 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * visibility.
-     *
-     * @param string $path
-     * @param string $visibility
      *
      * @return array|false
      */
@@ -254,8 +225,6 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * Get the visibility of a file.
-     *
-     * @param string $path
      *
      * @return array|false
      */
@@ -280,8 +249,6 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * Check whether a file exists.
      *
-     * @param string $path
-     *
      * @return array|bool|null
      */
     public function fileExists(string $path): bool
@@ -298,8 +265,6 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * read a file.
      *
-     * @param string $path
-     *
      * @return array|false
      */
     public function read(string $path): string
@@ -310,8 +275,6 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * read a file stream.
-     *
-     * @param string $path
      *
      * @return resource
      */
@@ -324,9 +287,6 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * Lists all files in the directory.
      *
-     * @param string $path
-     * @param bool $deep
-     *
      * @return \Traversable
      */
     public function listContents(string $path, bool $deep): iterable
@@ -337,6 +297,7 @@ class ObsAdapter implements FilesystemAdapter
         foreach ($result['objects'] as $files) {
             yield $this->mapObjectMetadata($files);
         }
+
         foreach ($result['prefix'] as $dir) {
             yield new DirectoryAttributes($dir);
         }
@@ -344,11 +305,6 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * get meta data.
-     *
-     * @param string $path
-     * @param string $type
-     *
-     * @return \League\Flysystem\FileAttributes
      */
     private function getMetadata(string $path, string $type): FileAttributes
     {
@@ -360,6 +316,7 @@ class ObsAdapter implements FilesystemAdapter
         } catch (ObsException $exception) {
             throw UnableToRetrieveMetadata::create($path, $type, '', $exception);
         }
+
         $attributes = $this->mapObjectMetadata($metadata->toArray(), $path);
 
         if (! $attributes instanceof FileAttributes) {
@@ -374,6 +331,7 @@ class ObsAdapter implements FilesystemAdapter
         if ($path === null) {
             $path = $this->pathPrefixer->stripPrefix($metadata['Key'] ?? $metadata['Prefix']);
         }
+
         if (substr($path, -1) === '/') {
             return new DirectoryAttributes(rtrim($path, '/'));
         }
@@ -404,8 +362,6 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * get the size of file.
      *
-     * @param string $path
-     *
      * @return array|false
      */
     public function fileSize(string $path): FileAttributes
@@ -416,8 +372,6 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * get mime type.
      *
-     * @param string $path
-     *
      * @return array|false
      */
     public function mimeType(string $path): FileAttributes
@@ -427,8 +381,6 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * get timestamp.
-     *
-     * @param string $path
      *
      * @return array|false
      */
@@ -441,8 +393,6 @@ class ObsAdapter implements FilesystemAdapter
      * Read an object from the ObsClient.
      *
      * @param $path
-     *
-     * @return \Psr\Http\Message\StreamInterface
      */
     protected function getObject($path): StreamInterface
     {
@@ -460,11 +410,6 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * File list core method.
-     *
-     * @param string $dirname
-     * @param bool $recursive
-     *
-     * @return array
      */
     public function listDirObjects(string $dirname = '', bool $recursive = false): array
     {
@@ -538,8 +483,6 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * Get options from the config.
-     *
-     * @return array
      */
     protected function createOptionsFromConfig(Config $config): array
     {

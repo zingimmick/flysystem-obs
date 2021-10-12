@@ -72,7 +72,7 @@ class ValidAdapterTest extends TestCase
     public function testCreateDir(): void
     {
         $this->adapter->createDirectory('fixture/path', new Config());
-        self::assertEquals([new DirectoryAttributes('fixture/path'),
+        self::assertSame([new DirectoryAttributes('fixture/path'),
         ], iterator_to_array($this->adapter->listContents('fixture/path', false)));
     }
 
