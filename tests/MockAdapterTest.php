@@ -13,6 +13,7 @@ use Obs\Internal\Common\Model;
 use Obs\ObsClient;
 use Obs\ObsException;
 use Zing\Flysystem\Obs\ObsAdapter;
+use Zing\Flysystem\Obs\PortableVisibilityConverter;
 
 class MockAdapterTest extends TestCase
 {
@@ -30,16 +31,21 @@ class MockAdapterTest extends TestCase
         $this->adapter->write('fixture/read.txt', 'read-test', new Config());
     }
 
-    private function mockPutObject($path, $body): void
+    private function mockPutObject($path, $body,$visibility=null): void
     {
+        $arg = [
+            'ContentType' => 'text/plain',
+            'Bucket' => 'test',
+            'Key' => $path,
+            'Body' => $body,
+        ];
+        if ($visibility !== null) {
+            $arg = array_merge($arg, [
+                'ACL' => $visibility === Visibility::PUBLIC ? 'public-read' : 'private',
+            ]);
+        }
         $this->client->shouldReceive('putObject')
-            ->withArgs([[
-                'ContentType' => 'text/plain',
-                'Bucket' => 'test',
-                'Key' => $path,
-                'Body' => $body,
-            ],
-            ])->andReturn(new Model());
+            ->withArgs([$arg])->andReturn(new Model());
     }
 
     public function testCopy(): void
@@ -355,6 +361,146 @@ class MockAdapterTest extends TestCase
         $this->adapter->writeStream('file.txt', $this->streamFor('write')->detach(), new Config());
         $this->mockGetObject('file.txt', 'write');
         self::assertSame('write', $this->adapter->read('file.txt'));
+    }
+
+    public function provideVisibilities()
+    {
+        return [[Visibility::PUBLIC], [Visibility::PRIVATE]];
+    }
+
+    private function mockGetVisibility($path, $visibility): void
+    {
+        $model = new Model([
+            'ContentLength' => '508',
+            'Date' => 'Mon, 31 May 2021 06:52:31 GMT',
+            'RequestId' => '00000179C132050392179DB73EB80FFF',
+            'Id2' => '32AAAQAAEAABAAAQAAEAABAAAQAAEAABCS7X7CQo6PJncbE/Rw7pAST9+g4eSFFj',
+            'Reserved' => 'amazon, aws and amazon web services are trademarks or registered trademarks of Amazon Technologies, Inc',
+            'Owner' => [
+                'DisplayName' => 'zingimmick',
+                'ID' => '0c85ae1126000f380f21c00e77706640',
+            ],
+            'Grants' => $visibility === Visibility::PRIVATE ? [
+                [
+                    'Grantee' => [
+                        'DisplayName' => 'zingimmick',
+                        'ID' => '0c85ae1126000f380f21c00e77706640',
+                        'URI' => '',
+                    ],
+                    'Permission' => 'FULL_CONTROL',
+                ],
+            ] : [
+                [
+                    'Grantee' => [
+                        'DisplayName' => 'zingimmick',
+                        'ID' => '0c85ae1126000f380f21c00e77706640',
+                        'URI' => '',
+                    ],
+                    'Permission' => 'FULL_CONTROL',
+                ],
+                [
+                    'Grantee' => [
+                        'DisplayName' => '',
+                        'ID' => '',
+                        'URI' => 'http://acs.amazonaws.com/groups/global/AllUsers',
+                    ],
+                    'Permission' => 'READ',
+                ],
+            ],
+            'VersionId' => '',
+            'HttpStatusCode' => 200,
+            'Reason' => 'OK',
+        ]);
+
+        $this->client->shouldReceive('getObjectAcl')
+            ->withArgs([[
+                'Bucket' => 'test',
+                'Key' => $path,
+            ],
+            ])
+            ->andReturn($model);
+    }
+
+    /**
+     * @dataProvider provideVisibilities
+     *
+     * @param $visibility
+     */
+    public function testWriteStreamWithVisibility($visibility): void
+    {
+        $this->mockPutObject('file.txt', 'write', $visibility);
+        $this->adapter->writeStream('file.txt', $this->streamFor('write')->detach(), new Config([
+            'visibility' => $visibility,
+        ]));
+        $this->mockGetVisibility('file.txt', $visibility);
+        self::assertSame($visibility, $this->adapter->visibility('file.txt')['visibility']);
+    }
+
+    public function testWriteStreamWithExpires(): void
+    {
+        $this->client->shouldReceive('putObject')
+            ->withArgs([[
+                'ContentType' => 'text/plain',
+                'Expires' => 20,
+                'Bucket' => 'test',
+                'Key' => 'file.txt',
+                'Body' => 'write',
+            ],
+            ])->andReturn(new Model());
+        $this->adapter->writeStream('file.txt', $this->streamFor('write')->detach(), new Config([
+            'Expires' => 20,
+        ]));
+        $this->mockGetObject('file.txt', 'write');
+        self::assertSame('write', $this->adapter->read('file.txt'));
+    }
+
+    public function testWriteStreamWithMimetype(): void
+    {
+        $this->client->shouldReceive('putObject')
+            ->withArgs([[
+                'ContentType' => 'image/png',
+                'Bucket' => 'test',
+                'Key' => 'file.txt',
+                'Body' => 'write',
+            ],
+            ])->andReturn(new Model());
+        $this->adapter->writeStream('file.txt', $this->streamFor('write')->detach(), new Config([
+            'ContentType' => 'image/png',
+        ]));
+        $this->client->shouldReceive('getObjectMetadata')
+            ->once()
+            ->withArgs([[
+                'Bucket' => 'test',
+                'Key' => 'file.txt',
+            ],
+            ])->andReturn(new Model([
+                'ContentLength' => 9,
+                'Date' => 'Mon, 31 May 2021 06:52:32 GMT',
+                'RequestId' => '00000179C13207FD9217A8324EE5B315',
+                'Id2' => '32AAAQAAEAABAAAQAAEAABAAAQAAEAABCSOcy2Ri+ilXxrwc5JIVg6ifOFbyOU/p',
+                'Reserved' => 'amazon, aws and amazon web services are trademarks or registered trademarks of Amazon Technologies, Inc',
+                'Expiration' => '',
+                'LastModified' => 'Mon, 31 May 2021 06:52:32 GMT',
+                'ContentType' => 'image/png',
+                'ETag' => '"098f6bcd4621d373cade4e832627b4f6"',
+                'VersionId' => '',
+                'WebsiteRedirectLocation' => '',
+                'StorageClass' => 'STANDARD_IA',
+                'AllowOrigin' => '',
+                'MaxAgeSeconds' => '',
+                'ExposeHeader' => '',
+                'AllowMethod' => '',
+                'AllowHeader' => '',
+                'Restore' => '',
+                'SseKms' => '',
+                'SseKmsKey' => '',
+                'SseC' => '',
+                'SseCKeyMd5' => '',
+                'Metadata' => [],
+                'HttpStatusCode' => 200,
+                'Reason' => 'OK',
+            ]));
+        self::assertSame('image/png', $this->adapter->mimeType('file.txt')['mime_type']);
     }
 
     public function testDelete(): void

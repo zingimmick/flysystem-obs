@@ -31,9 +31,19 @@ class ObsAdapter implements FilesystemAdapter
     private const EXTRA_METADATA_FIELDS = ['Metadata', 'StorageClass', 'ETag', 'VersionId'];
 
     /**
+     * @var string
+     */
+    private const DELIMITER = '/';
+
+    /**
+     * @var int
+     */
+    private const MAX_KEYS = 1000;
+
+    /**
      * @var array
      */
-    protected static $metaOptions = ['ACL', 'Expires', 'StorageClass'];
+    protected static $metaOptions = ['ACL', 'Expires', 'StorageClass','ContentType'];
 
     /**
      * @var string
@@ -454,70 +464,80 @@ class ObsAdapter implements FilesystemAdapter
      * @param string $dirname
      * @param bool $recursive
      *
-     * @throws \Obs\ObsException
-     *
      * @return array
      */
     public function listDirObjects(string $dirname = '', bool $recursive = false): array
     {
-        $delimiter = '/';
         $nextMarker = '';
-        $maxKeys = 1000;
 
         $result = [];
 
         while (true) {
-            $options = [
+            $model = $this->client->listObjects([
                 'Bucket' => $this->bucket,
-                'Delimiter' => $delimiter,
+                'Delimiter' => self::DELIMITER,
                 'Prefix' => $dirname,
-                'MaxKeys' => $maxKeys,
+                'MaxKeys' => self::MAX_KEYS,
                 'Marker' => $nextMarker,
-            ];
-
-            $model = $this->client->listObjects($options);
+            ]);
 
             $nextMarker = $model['NextMarker'];
             $objects = $model['Contents'];
             $prefixes = $model['CommonPrefixes'];
-            if (! empty($objects)) {
-                foreach ($objects as $object) {
-                    $result['objects'][] = array_merge($object, [
-                        'Prefix' => $dirname,
-                    ]);
-                }
-            } else {
-                $result['objects'] = [];
-            }
-
-            if (! empty($prefixes)) {
-                foreach ($prefixes as $prefix) {
-                    $result['prefix'][] = $prefix['Prefix'];
-                }
-            } else {
-                $result['prefix'] = [];
-            }
-
-            // Recursive directory
-            if ($recursive) {
-                foreach ($result['prefix'] as $prefix) {
-                    $next = $this->listDirObjects($prefix, $recursive);
-                    $result['objects'] = array_merge($result['objects'], $next['objects']);
-                }
-            }
+            $result = $this->processObjects($result, $objects, $dirname);
+            $result = $this->processPrefixes($result, $prefixes);
+            $result = $this->processRecursive($result, $recursive);
 
             if ($nextMarker === '') {
                 break;
             }
-        }//end while
+        }
+
+        return $result;
+    }
+
+    private function processRecursive(array $result, $recursive): array
+    {
+        if ($recursive) {
+            foreach ($result['prefix'] as $prefix) {
+                $next = $this->listDirObjects($prefix, $recursive);
+                $result['objects'] = array_merge($result['objects'], $next['objects']);
+            }
+        }
+
+        return $result;
+    }
+
+    private function processObjects(array $result, $objects, $dirname): array
+    {
+        if (! empty($objects)) {
+            foreach ($objects as $object) {
+                $result['objects'][] = array_merge($object, [
+                    'Prefix' => $dirname,
+                ]);
+            }
+        } else {
+            $result['objects'] = [];
+        }
+
+        return $result;
+    }
+
+    private function processPrefixes(array $result, $prefixes): array
+    {
+        if (! empty($prefixes)) {
+            foreach ($prefixes as $prefix) {
+                $result['prefix'][] = $prefix['Prefix'];
+            }
+        } else {
+            $result['prefix'] = [];
+        }
 
         return $result;
     }
 
     /**
      * Get options from the config.
-     *
-     * @param \League\Flysystem\Config $config
      *
      * @return array
      */

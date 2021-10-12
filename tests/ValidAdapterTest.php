@@ -107,6 +107,40 @@ class ValidAdapterTest extends TestCase
         self::assertSame('write', $this->adapter->read('fixture/file.txt'));
     }
 
+    public function provideVisibilities()
+    {
+        return [[Visibility::PUBLIC], [Visibility::PRIVATE]];
+    }
+
+    /**
+     * @dataProvider provideVisibilities
+     *
+     * @param $visibility
+     */
+    public function testWriteStreamWithVisibility($visibility): void
+    {
+        $this->adapter->writeStream('fixture/file.txt', $this->streamFor('write')->detach(), new Config([
+            'visibility' => $visibility,
+        ]));
+        self::assertSame($visibility, $this->adapter->visibility('fixture/file.txt')['visibility']);
+    }
+
+    public function testWriteStreamWithExpires(): void
+    {
+        $this->adapter->writeStream('fixture/file.txt', $this->streamFor('write')->detach(), new Config([
+            'Expires' => 20,
+        ]));
+        self::assertSame('write', $this->adapter->read('fixture/file.txt'));
+    }
+
+    public function testWriteStreamWithMimetype(): void
+    {
+        $this->adapter->writeStream('fixture/file.txt', $this->streamFor('write')->detach(), new Config([
+            'ContentType' => 'image/png',
+        ]));
+        self::assertSame('image/png', $this->adapter->mimeType('fixture/file.txt')['mime_type']);
+    }
+
     public function testDelete(): void
     {
         $this->adapter->writeStream('fixture/file.txt', $this->streamFor('test')->detach(), new Config());

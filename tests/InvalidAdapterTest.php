@@ -20,22 +20,28 @@ use Zing\Flysystem\Obs\ObsAdapter;
 
 class InvalidAdapterTest extends TestCase
 {
+    /**
+     * @var array<string, string>
+     */
+    private const CONFIG = [
+        'key' => 'aW52YWxpZC1rZXk=',
+        'secret' => 'aW52YWxpZC1zZWNyZXQ=',
+        'bucket' => 'test',
+        'endpoint' => 'obs.cn-east-3.myhuaweicloud.com',
+        'path_style' => '',
+        'region' => '',
+    ];
+
     private $adapter;
+
+    private $client;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $config = [
-            'key' => 'aW52YWxpZC1rZXk=',
-            'secret' => 'aW52YWxpZC1zZWNyZXQ=',
-            'bucket' => 'test',
-            'endpoint' => 'obs.cn-east-3.myhuaweicloud.com',
-            'path_style' => '',
-            'region' => '',
-        ];
-        $obsClient = new ObsClient($config);
-        $this->adapter = new ObsAdapter($obsClient, $config['endpoint'], $config['bucket']);
+        $this->client = new ObsClient(self::CONFIG);
+        $this->adapter = new ObsAdapter($this->client, self::CONFIG['endpoint'], self::CONFIG['bucket']);
     }
 
     public function testCopy(): void
