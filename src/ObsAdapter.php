@@ -4,19 +4,34 @@ declare(strict_types=1);
 
 namespace Zing\Flysystem\Obs;
 
-use GuzzleHttp\Psr7\Uri;
-use League\Flysystem\Adapter\AbstractAdapter;
-use League\Flysystem\AdapterInterface;
 use League\Flysystem\Config;
+use League\Flysystem\DirectoryAttributes;
+use League\Flysystem\FileAttributes;
+use League\Flysystem\FilesystemAdapter;
+use League\Flysystem\FilesystemOperationFailed;
+use League\Flysystem\PathPrefixer;
+use League\Flysystem\StorageAttributes;
+use League\Flysystem\UnableToCopyFile;
+use League\Flysystem\UnableToCreateDirectory;
+use League\Flysystem\UnableToDeleteFile;
+use League\Flysystem\UnableToMoveFile;
+use League\Flysystem\UnableToReadFile;
+use League\Flysystem\UnableToRetrieveMetadata;
+use League\Flysystem\UnableToSetVisibility;
+use League\Flysystem\UnableToWriteFile;
+use League\MimeTypeDetection\FinfoMimeTypeDetector;
+use League\MimeTypeDetection\MimeTypeDetector;
 use Obs\ObsClient;
 use Obs\ObsException;
+use Psr\Http\Message\StreamInterface;
+use Throwable;
 
-class ObsAdapter extends AbstractAdapter
+class ObsAdapter implements FilesystemAdapter
 {
     /**
-     * @var string
+     * @var string[]
      */
-    public const PUBLIC_GRANT_URI = 'http://acs.amazonaws.com/groups/global/AllUsers';
+    private const EXTRA_METADATA_FIELDS = ['Metadata', 'StorageClass', 'ETag', 'VersionId'];
 
     /**
      * @var string
@@ -31,12 +46,7 @@ class ObsAdapter extends AbstractAdapter
     /**
      * @var array
      */
-    protected static $metaOptions = ['ACL', 'Expires', 'StorageClass'];
-
-    /**
-     * @var string
-     */
-    protected $endpoint;
+    protected static $metaOptions = ['ACL', 'Expires', 'StorageClass', 'ContentType'];
 
     /**
      * @var string
@@ -54,558 +64,354 @@ class ObsAdapter extends AbstractAdapter
     protected $client;
 
     /**
-     * @param string $prefix
+     * @var \League\Flysystem\PathPrefixer
      */
-    public function __construct(ObsClient $client, string $endpoint, string $bucket, $prefix = '', array $options = [])
-    {
+    private $pathPrefixer;
+
+    /**
+     * @var \Zing\Flysystem\Obs\VisibilityConverter
+     */
+    private $visibilityConverter;
+
+    /**
+     * @var \League\MimeTypeDetection\MimeTypeDetector
+     */
+    private $mimeTypeDetector;
+
+    public function __construct(
+        ObsClient $client,
+        string $bucket,
+        string $prefix = '',
+        ?VisibilityConverter $visibility = null,
+        ?MimeTypeDetector $mimeTypeDetector = null,
+        array $options = []
+    ) {
         $this->client = $client;
-        $this->endpoint = $endpoint;
         $this->bucket = $bucket;
+        $this->pathPrefixer = new PathPrefixer($prefix);
+        $this->visibilityConverter = $visibility ?: new PortableVisibilityConverter();
+        $this->mimeTypeDetector = $mimeTypeDetector ?: new FinfoMimeTypeDetector();
         $this->options = $options;
-        $this->setPathPrefix($prefix);
-    }
-
-    /**
-     * Get the S3Client bucket.
-     *
-     * @return string
-     */
-    public function getBucket()
-    {
-        return $this->bucket;
-    }
-
-    /**
-     * Set the S3Client bucket.
-     *
-     * @param mixed $bucket
-     */
-    public function setBucket($bucket): void
-    {
-        $this->bucket = $bucket;
-    }
-
-    /**
-     * Get the S3Client instance.
-     *
-     * @return \Obs\ObsClient
-     */
-    public function getClient()
-    {
-        return $this->client;
     }
 
     /**
      * write a file.
      *
-     * @param string $path
-     * @param string $contents
-     *
      * @return array|false
      */
-    public function write($path, $contents, Config $config)
+    public function write(string $path, string $contents, Config $config): void
     {
-        $path = $this->applyPathPrefix($path);
+        $options = $this->createOptionsFromConfig($config);
+        if (! isset($options['ACL'])) {
+            $visibility = $config->get(Config::OPTION_VISIBILITY);
+            if ($visibility !== null) {
+                $options['ACL'] = $options['ACL'] ?? $this->visibilityConverter->visibilityToAcl($visibility);
+            }
+        }
 
-        $options = $this->getOptionsFromConfig($config);
+        $shouldDetermineMimetype = $contents !== '' && ! array_key_exists('ContentType', $options);
+
+        if ($shouldDetermineMimetype) {
+            $mimeType = $this->mimeTypeDetector->detectMimeType($path, $contents);
+            if ($mimeType) {
+                $options['ContentType'] = $mimeType;
+            }
+        }
 
         try {
             $this->client->putObject(array_merge($options, [
                 'Bucket' => $this->bucket,
-                'Key' => $path,
+                'Key' => $this->pathPrefixer->prefixPath($path),
                 'Body' => $contents,
             ]));
         } catch (ObsException $obsException) {
-            return false;
+            throw UnableToWriteFile::atLocation($path, '', $obsException);
         }
-
-        return true;
     }
 
     /**
-     * Write a new file using a stream.
-     *
-     * @param string $path
-     * @param resource $resource
-     *
-     * @return array|false
+     * @param resource $contents
      */
-    public function writeStream($path, $resource, Config $config)
+    public function writeStream(string $path, $contents, Config $config): void
     {
-        $contents = stream_get_contents($resource);
-
-        return $this->write($path, $contents, $config);
-    }
-
-    /**
-     * Update a file.
-     *
-     * @param string $path
-     * @param string $contents
-     *
-     * @return array|false
-     */
-    public function update($path, $contents, Config $config)
-    {
-        return $this->write($path, $contents, $config);
-    }
-
-    /**
-     * Update a file using a stream.
-     *
-     * @param string $path
-     * @param resource $resource
-     *
-     * @return array|false
-     */
-    public function updateStream($path, $resource, Config $config)
-    {
-        return $this->writeStream($path, $resource, $config);
+        $this->write($path, stream_get_contents($contents), $config);
     }
 
     /**
      * rename a file.
-     *
-     * @param string $path
-     * @param string $newpath
-     *
-     * @return bool
      */
-    public function rename($path, $newpath)
+    public function move(string $source, string $destination, Config $config): void
     {
-        if (! $this->copy($path, $newpath)) {
-            return false;
+        try {
+            $this->copy($source, $destination, $config);
+            $this->delete($source);
+        } catch (FilesystemOperationFailed $filesystemOperationFailed) {
+            throw UnableToMoveFile::fromLocationTo($source, $destination);
         }
-
-        return $this->delete($path);
     }
 
     /**
      * copy a file.
-     *
-     * @param string $path
-     * @param string $newpath
-     *
-     * @return bool
      */
-    public function copy($path, $newpath)
+    public function copy(string $source, string $destination, Config $config): void
     {
-        $path = $this->applyPathPrefix($path);
-        $newpath = $this->applyPathPrefix($newpath);
-
         try {
-            $this->client->copyObject([
+            $this->client->copyObject(array_merge($this->createOptionsFromConfig($config), [
                 'Bucket' => $this->bucket,
-                'Key' => $newpath,
-                'CopySource' => $this->bucket . '/' . $path,
+                'Key' => $this->pathPrefixer->prefixPath($destination),
+                'CopySource' => $this->bucket . '/' . $this->pathPrefixer->prefixPath($source),
                 'MetadataDirective' => ObsClient::CopyMetadata,
-            ]);
+            ]));
         } catch (ObsException $exception) {
-            return false;
+            throw UnableToCopyFile::fromLocationTo($source, $destination, $exception);
         }
-
-        return true;
     }
 
     /**
      * delete a file.
-     *
-     * @param string $path
-     *
-     * @return bool
      */
-    public function delete($path)
+    public function delete(string $path): void
     {
-        $path = $this->applyPathPrefix($path);
-
         try {
             $this->client->deleteObject([
                 'Bucket' => $this->bucket,
-                'Key' => $path,
+                'Key' => $this->pathPrefixer->prefixPath($path),
             ]);
         } catch (ObsException $obsException) {
-            return false;
+            throw UnableToDeleteFile::atLocation($path, '', $obsException);
         }
-
-        return ! $this->has($path);
     }
 
     /**
      * Delete a directory.
-     *
-     * @param string $dirname
-     *
-     * @return bool
      */
-    public function deleteDir($dirname)
+    public function deleteDirectory(string $path): void
     {
-        $files = $this->listContents($dirname, true);
+        $files = $this->listContents($path, true);
         foreach ($files as $file) {
             $this->delete($file['path']);
         }
-
-        return ! $this->has($dirname);
     }
 
     /**
      * create a directory.
-     *
-     * @param string $dirname
-     *
-     * @return bool
      */
-    public function createDir($dirname, Config $config)
+    public function createDirectory(string $path, Config $config): void
     {
-        $defaultFile = trim($dirname, '/') . '/';
-
-        return $this->write($defaultFile, null, $config);
+        try {
+            $this->write(trim($path, '/') . '/', '', $config);
+        } catch (FilesystemOperationFailed $exception) {
+            throw UnableToCreateDirectory::dueToFailure($path, $exception);
+        }
     }
 
     /**
      * visibility.
      *
-     * @param string $path
-     * @param string $visibility
-     *
      * @return array|false
      */
-    public function setVisibility($path, $visibility)
+    public function setVisibility(string $path, string $visibility): void
     {
-        $acl = $visibility === AdapterInterface::VISIBILITY_PUBLIC ? ObsClient::AclPublicRead : ObsClient::AclPrivate;
-
         try {
             $this->client->setObjectAcl([
                 'Bucket' => $this->bucket,
-                'Key' => $this->applyPathPrefix($path),
-                'ACL' => $acl,
+                'Key' => $this->pathPrefixer->prefixPath($path),
+                'ACL' => $this->visibilityConverter->visibilityToAcl($visibility),
             ]);
         } catch (ObsException $exception) {
-            return false;
+            throw UnableToSetVisibility::atLocation($path, '', $exception);
         }
-
-        return [
-            'visibility' => $visibility,
-            'path' => $path,
-        ];
     }
 
     /**
      * Get the visibility of a file.
      *
-     * @param string $path
-     *
      * @return array|false
      */
-    public function getVisibility($path)
+    public function visibility(string $path): FileAttributes
     {
         try {
-            $visibility = $this->getRawVisibility($path);
-        } catch (ObsException $obsException) {
-            return false;
+            $result = $this->client->getObjectAcl(
+                [
+                    'Bucket' => $this->bucket,
+                    'Key' => $this->pathPrefixer->prefixPath($path),
+                ]
+            );
+        } catch (Throwable $exception) {
+            throw UnableToRetrieveMetadata::visibility($path, '', $exception);
         }
 
-        return [
-            'visibility' => $visibility,
-        ];
-    }
+        $visibility = $this->visibilityConverter->aclToVisibility((array) $result->get('Grants'));
 
-    /**
-     * Get the object acl presented as a visibility.
-     *
-     * @param string $path
-     *
-     * @return string
-     */
-    protected function getRawVisibility($path)
-    {
-        $model = $this->client->getObjectAcl(
-            [
-                'Bucket' => $this->bucket,
-                'Key' => $this->applyPathPrefix($path),
-            ]
-        );
-
-        foreach ($model['Grants'] as $grant) {
-            if (! isset($grant['Grantee']['URI'])) {
-                continue;
-            }
-
-            if (! in_array($grant['Grantee']['URI'], [self::PUBLIC_GRANT_URI, ObsClient::AllUsers], true)) {
-                continue;
-            }
-
-            if ($grant['Permission'] !== 'READ') {
-                continue;
-            }
-
-            return AdapterInterface::VISIBILITY_PUBLIC;
-        }
-
-        return AdapterInterface::VISIBILITY_PRIVATE;
+        return new FileAttributes($path, null, $visibility);
     }
 
     /**
      * Check whether a file exists.
      *
-     * @param string $path
-     *
      * @return array|bool|null
      */
-    public function has($path)
+    public function fileExists(string $path): bool
     {
-        return $this->getMetadata($path);
+        try {
+            $this->getMetadata($path, FileAttributes::ATTRIBUTE_PATH);
+        } catch (Throwable $throwable) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
      * read a file.
      *
-     * @param string $path
-     *
      * @return array|false
      */
-    public function read($path)
+    public function read(string $path): string
     {
-        try {
-            $contents = $this->getObject($path)
-                ->getContents();
-        } catch (ObsException $exception) {
-            return false;
-        }
-
-        return [
-            'contents' => $contents,
-            'path' => $path,
-        ];
+        return $this->getObject($path)
+            ->getContents();
     }
 
     /**
      * read a file stream.
      *
-     * @param string $path
-     *
-     * @return array|false
+     * @return resource
      */
-    public function readStream($path)
+    public function readStream(string $path)
     {
-        try {
-            $stream = $this->getObject($path)
-                ->detach();
-        } catch (ObsException $exception) {
-            return false;
-        }
-
-        return [
-            'stream' => $stream,
-            'path' => $path,
-        ];
+        return $this->getObject($path)
+            ->detach();
     }
 
     /**
      * Lists all files in the directory.
      *
-     * @param string $directory
-     * @param bool $recursive
-     *
-     * @return array
+     * @return \Traversable
      */
-    public function listContents($directory = '', $recursive = false)
+    public function listContents(string $path, bool $deep): iterable
     {
-        $list = [];
-        $directory = substr($directory, -1) === '/' ? $directory : $directory . '/';
-        $result = $this->listDirObjects($directory, $recursive);
+        $directory = substr($path, -1) === '/' ? $path : $path . '/';
+        $result = $this->listDirObjects($directory, $deep);
 
         foreach ($result['objects'] as $files) {
-            $metadata = $this->mapObjectMetadata($files);
-            $list[] = $metadata;
+            yield $this->mapObjectMetadata($files);
         }
 
         foreach ($result['prefix'] as $dir) {
-            $list[] = [
-                'type' => 'dir',
-                'path' => $dir,
-            ];
+            yield new DirectoryAttributes($dir);
         }
-
-        return $list;
-    }
-
-    private function mapObjectMetadata($metadata, $path = null)
-    {
-        if ($path === null) {
-            $path = $metadata['Key'] ?? $metadata['Prefix'];
-        }
-
-        if ($this->isOnlyDir($this->removePathPrefix($path))) {
-            return [
-                'type' => 'dir',
-                'path' => rtrim($this->removePathPrefix($path), '/'),
-            ];
-        }
-
-        return [
-            'type' => 'file',
-            'mimetype' => $metadata['ContentType'] ?? null,
-            'path' => $this->removePathPrefix($path),
-            'timestamp' => strtotime($metadata['LastModified']),
-            'size' => $metadata['ContentLength'] ?? $metadata['Size'] ?? null,
-        ];
     }
 
     /**
      * get meta data.
-     *
-     * @param string $path
-     *
-     * @return array|false
      */
-    public function getMetadata($path)
+    private function getMetadata(string $path, string $type): FileAttributes
     {
-        $path = $this->applyPathPrefix($path);
-
         try {
             $metadata = $this->client->getObjectMetadata([
                 'Bucket' => $this->bucket,
-                'Key' => $path,
+                'Key' => $this->pathPrefixer->prefixPath($path),
             ]);
         } catch (ObsException $exception) {
-            return false;
+            throw UnableToRetrieveMetadata::create($path, $type, '', $exception);
         }
 
-        return $this->mapObjectMetadata($metadata, $path);
+        $attributes = $this->mapObjectMetadata($metadata->toArray(), $path);
+
+        if (! $attributes instanceof FileAttributes) {
+            throw UnableToRetrieveMetadata::create($path, $type);
+        }
+
+        return $attributes;
+    }
+
+    private function mapObjectMetadata(array $metadata, ?string $path = null): StorageAttributes
+    {
+        if ($path === null) {
+            $path = $this->pathPrefixer->stripPrefix($metadata['Key'] ?? $metadata['Prefix']);
+        }
+
+        if (substr($path, -1) === '/') {
+            return new DirectoryAttributes(rtrim($path, '/'));
+        }
+
+        return new FileAttributes(
+            $path,
+            $metadata['ContentLength'] ?? $metadata['Size'] ?? null,
+            null,
+            strtotime($metadata['LastModified']),
+            $metadata['ContentType'] ?? null,
+            $this->extractExtraMetadata($metadata)
+        );
+    }
+
+    private function extractExtraMetadata(array $metadata): array
+    {
+        $extracted = [];
+
+        foreach (self::EXTRA_METADATA_FIELDS as $field) {
+            if (isset($metadata[$field]) && $metadata[$field] !== '') {
+                $extracted[$field] = $metadata[$field];
+            }
+        }
+
+        return $extracted;
     }
 
     /**
      * get the size of file.
      *
-     * @param string $path
-     *
      * @return array|false
      */
-    public function getSize($path)
+    public function fileSize(string $path): FileAttributes
     {
-        return $this->getMetadata($path);
+        return $this->getMetadata($path, FileAttributes::ATTRIBUTE_FILE_SIZE);
     }
 
     /**
      * get mime type.
      *
-     * @param string $path
-     *
      * @return array|false
      */
-    public function getMimetype($path)
+    public function mimeType(string $path): FileAttributes
     {
-        return $this->getMetadata($path);
+        return $this->getMetadata($path, FileAttributes::ATTRIBUTE_MIME_TYPE);
     }
 
     /**
      * get timestamp.
      *
-     * @param string $path
-     *
      * @return array|false
      */
-    public function getTimestamp($path)
+    public function lastModified(string $path): FileAttributes
     {
-        return $this->getMetadata($path);
-    }
-
-    /**
-     * Check if the path contains only directories.
-     *
-     * @param string $path
-     *
-     * @return bool
-     */
-    private function isOnlyDir($path)
-    {
-        return substr($path, -1) === '/';
-    }
-
-    /**
-     * Get resource url.
-     *
-     * @param string $path
-     *
-     * @return string
-     */
-    public function getUrl($path)
-    {
-        $path = $this->applyPathPrefix($path);
-
-        if (isset($this->options['url'])) {
-            return $this->concatPathToUrl($this->options['url'], $path);
-        }
-
-        return $this->normalizeHost() . ltrim($path, '/');
-    }
-
-    protected function concatPathToUrl($url, $path)
-    {
-        return rtrim($url, '/') . '/' . ltrim($path, '/');
-    }
-
-    protected function replaceBaseUrl($uri, $url)
-    {
-        $parsed = parse_url($url);
-
-        return $uri
-            ->withScheme($parsed['scheme'])
-            ->withHost($parsed['host'])
-            ->withPort($parsed['port'] ?? null);
-    }
-
-    /**
-     * normalize Host.
-     *
-     * @return string
-     */
-    protected function normalizeHost()
-    {
-        $endpoint = $this->endpoint;
-        if (strpos($endpoint, 'http') !== 0) {
-            $endpoint = 'https://' . $endpoint;
-        }
-
-        $url = parse_url($endpoint);
-        $domain = $url['host'];
-        if (! ($this->options['bucket_endpoint'] ?? false)) {
-            $domain = $this->bucket . '.' . $domain;
-        }
-
-        $domain = sprintf('%s://%s', $url['scheme'], $domain);
-
-        return rtrim($domain, '/') . '/';
+        return $this->getMetadata($path, FileAttributes::ATTRIBUTE_LAST_MODIFIED);
     }
 
     /**
      * Read an object from the ObsClient.
      *
      * @param $path
-     *
-     * @return \Obs\Internal\Common\CheckoutStream
      */
-    protected function getObject($path)
+    protected function getObject($path): StreamInterface
     {
-        $path = $this->applyPathPrefix($path);
+        try {
+            $model = $this->client->getObject([
+                'Bucket' => $this->bucket,
+                'Key' => $this->pathPrefixer->prefixPath($path),
+            ]);
 
-        $model = $this->client->getObject([
-            'Bucket' => $this->bucket,
-            'Key' => $path,
-        ]);
-
-        return $model['Body'];
+            return $model['Body'];
+        } catch (Throwable $throwable) {
+            throw UnableToReadFile::fromLocation($path, '', $throwable);
+        }
     }
 
     /**
      * File list core method.
-     *
-     * @param string $dirname
-     * @param bool $recursive
-     *
-     * @return array
      */
-    public function listDirObjects($dirname = '', $recursive = false)
+    public function listDirObjects(string $dirname = '', bool $recursive = false): array
     {
         $nextMarker = '';
 
@@ -676,89 +482,18 @@ class ObsAdapter extends AbstractAdapter
     }
 
     /**
-     * sign url.
-     *
-     * @param $path
-     * @param \DateTimeInterface|int $expiration
-     * @param mixed $method
-     *
-     * @return bool|string
-     */
-    public function signUrl($path, $expiration, array $options = [], $method = 'GET')
-    {
-        $expires = $expiration instanceof \DateTimeInterface ? $expiration->getTimestamp() - time() : $expiration;
-        $path = $this->applyPathPrefix($path);
-
-        try {
-            $model = $this->client->createSignedUrl([
-                'Method' => $method,
-                'Bucket' => $this->bucket,
-                'Key' => $path,
-                'Expires' => $expires,
-                'QueryParams' => $options,
-            ]);
-        } catch (ObsException $exception) {
-            return false;
-        }
-
-        return $model['SignedUrl'];
-    }
-
-    /**
-     * temporary file url.
-     *
-     * @param string $path
-     * @param \DateTimeInterface|int $expiration
-     * @param mixed $method
-     *
-     * @return bool|string
-     */
-    public function getTemporaryUrl($path, $expiration, array $options = [], $method = 'GET')
-    {
-        $url = $this->signUrl($path, $expiration, $options, $method);
-        if ($url === false) {
-            return false;
-        }
-
-        $uri = new Uri($url);
-        $url = $this->options['temporary_url'] ?? null;
-        if ($url !== null) {
-            $uri = $this->replaceBaseUrl($uri, $url);
-        }
-
-        return (string) $uri;
-    }
-
-    /**
      * Get options from the config.
-     *
-     * @return array
      */
-    protected function getOptionsFromConfig(Config $config)
+    protected function createOptionsFromConfig(Config $config): array
     {
         $options = $this->options;
-        $visibility = $config->get('visibility');
-        if ($visibility) {
-            // For local reference
-            $options['visibility'] = $visibility;
-            // For external reference
-            $options['ACL'] = $visibility === AdapterInterface::VISIBILITY_PUBLIC ? ObsClient::AclPublicRead : ObsClient::AclPrivate;
-        }
-
-        $mimetype = $config->get('mimetype');
-        if ($mimetype) {
-            // For local reference
-            $options['mimetype'] = $mimetype;
-            // For external reference
-            $options['ContentType'] = $mimetype;
-        }
 
         foreach (static::$metaOptions as $option) {
-            if (! $config->has($option)) {
-                continue;
-            }
+            $value = $config->get($option, '__NOT_SET__');
 
-            $options[$option] = $config->get($option);
+            if ($value !== '__NOT_SET__') {
+                $options[$option] = $value;
+            }
         }
 
         return $options;

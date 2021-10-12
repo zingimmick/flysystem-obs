@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Zing\Flysystem\Obs\Tests;
 
-use League\Flysystem\AdapterInterface;
 use League\Flysystem\Config;
+use League\Flysystem\DirectoryAttributes;
+use League\Flysystem\FileAttributes;
+use League\Flysystem\Visibility;
+use Mockery;
 use Obs\Internal\Common\Model;
 use Obs\ObsClient;
 use Obs\ObsException;
@@ -21,79 +24,23 @@ class MockAdapterTest extends TestCase
     {
         parent::setUp();
 
-        $this->client = \Mockery::mock(ObsClient::class);
-        $this->adapter = new ObsAdapter($this->client, 'obs.cn-east-3.myhuaweicloud.com', 'test');
-        $this->client->shouldReceive('putObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'fixture/read.txt',
-                'Body' => 'read-test',
-            ],
-            ])->andReturn(new Model([]));
+        $this->client = Mockery::mock(ObsClient::class);
+        $this->adapter = new ObsAdapter($this->client, 'test');
+        $this->mockPutObject('fixture/read.txt', 'read-test');
         $this->adapter->write('fixture/read.txt', 'read-test', new Config());
-    }
-
-    public function testUpdate(): void
-    {
-        $this->client->shouldReceive('putObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'file.txt',
-                'Body' => 'update',
-            ],
-            ])->andReturn(new Model());
-        $this->adapter->update('file.txt', 'update', new Config());
-        $this->client->shouldReceive('getObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'file.txt',
-            ],
-            ])->andReturn(new Model([
-                'Body' => $this->streamFor('update'),
-            ]));
-        self::assertSame('update', $this->adapter->read('file.txt')['contents']);
-    }
-
-    public function testUpdateStream(): void
-    {
-        $this->client->shouldReceive('putObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'file.txt',
-                'Body' => 'write',
-            ],
-            ])->andReturn(new Model());
-        $this->adapter->write('file.txt', 'write', new Config());
-        $this->client->shouldReceive('putObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'file.txt',
-                'Body' => 'update',
-            ],
-            ])->andReturn(new Model());
-        $this->adapter->updateStream('file.txt', $this->streamFor('update')->detach(), new Config());
-        $this->client->shouldReceive('getObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'file.txt',
-            ],
-            ])->andReturn(new Model([
-                'Body' => $this->streamFor('update'),
-            ]));
-        self::assertSame('update', $this->adapter->read('file.txt')['contents']);
     }
 
     private function mockPutObject($path, $body, $visibility = null): void
     {
         $arg = [
+            'ContentType' => 'text/plain',
             'Bucket' => 'test',
             'Key' => $path,
             'Body' => $body,
         ];
         if ($visibility !== null) {
             $arg = array_merge($arg, [
-                'visibility' => $visibility === AdapterInterface::VISIBILITY_PUBLIC ? 'public' : 'private',
-                'ACL' => $visibility === AdapterInterface::VISIBILITY_PUBLIC ? 'public-read' : 'private',
+                'ACL' => $visibility === Visibility::PUBLIC ? 'public-read' : 'private',
             ]);
         }
 
@@ -113,9 +60,9 @@ class MockAdapterTest extends TestCase
                 'MetadataDirective' => 'COPY',
             ],
             ])->andReturn(new Model());
-        $this->adapter->copy('file.txt', 'copy.txt');
+        $this->adapter->copy('file.txt', 'copy.txt', new Config());
         $this->mockGetObject('copy.txt', 'write');
-        self::assertSame('write', $this->adapter->read('copy.txt')['contents']);
+        self::assertSame('write', $this->adapter->read('copy.txt'));
     }
 
     private function mockGetObject($path, $body): void
@@ -139,7 +86,7 @@ class MockAdapterTest extends TestCase
                 'Body' => null,
             ],
             ])->andReturn(new Model());
-        $this->adapter->createDir('path', new Config());
+        $this->adapter->createDirectory('path', new Config());
         $this->client->shouldReceive('listObjects')
             ->withArgs([[
                 'Bucket' => 'test',
@@ -197,22 +144,15 @@ class MockAdapterTest extends TestCase
                     'Reason' => 'OK',
                 ]
             ));
-        self::assertSame([[
-            'type' => 'dir',
-            'path' => 'path',
-        ],
-        ], $this->adapter->listContents('path'));
+        self::assertEquals(
+            [new DirectoryAttributes('path')],
+            iterator_to_array($this->adapter->listContents('path', false))
+        );
     }
 
     public function testSetVisibility(): void
     {
-        $this->client->shouldReceive('putObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'file.txt',
-                'Body' => 'write',
-            ],
-            ])->andReturn(new Model());
+        $this->mockPutObject('file.txt', 'write');
         $this->adapter->write('file.txt', 'write', new Config());
         $this->client->shouldReceive('getObjectAcl')
             ->withArgs([[
@@ -274,10 +214,7 @@ class MockAdapterTest extends TestCase
                 'HttpStatusCode' => 200,
                 'Reason' => 'OK',
             ]));
-        self::assertSame(
-            AdapterInterface::VISIBILITY_PRIVATE,
-            $this->adapter->getVisibility('file.txt')['visibility']
-        );
+        self::assertSame(Visibility::PRIVATE, $this->adapter->visibility('file.txt')->visibility());
         $this->client->shouldReceive('setObjectAcl')
             ->withArgs([[
                 'Bucket' => 'test',
@@ -293,12 +230,9 @@ class MockAdapterTest extends TestCase
                 'HttpStatusCode' => 200,
                 'Reason' => 'OK',
             ]));
-        $this->adapter->setVisibility('file.txt', AdapterInterface::VISIBILITY_PUBLIC);
+        $this->adapter->setVisibility('file.txt', Visibility::PUBLIC);
 
-        self::assertSame(
-            AdapterInterface::VISIBILITY_PUBLIC,
-            $this->adapter->getVisibility('file.txt')['visibility']
-        );
+        self::assertSame(Visibility::PUBLIC, $this->adapter->visibility('file.txt')['visibility']);
     }
 
     public function testRename(): void
@@ -306,14 +240,14 @@ class MockAdapterTest extends TestCase
         $this->mockPutObject('from.txt', 'write');
         $this->adapter->write('from.txt', 'write', new Config());
         $this->mockGetMetadata('from.txt');
-        self::assertTrue((bool) $this->adapter->has('from.txt'));
+        self::assertTrue((bool) $this->adapter->fileExists('from.txt'));
         $this->client->shouldReceive('getObjectMetadata')
             ->withArgs([[
                 'Bucket' => 'test',
                 'Key' => 'to.txt',
             ],
             ])->andThrow(new ObsException());
-        self::assertFalse((bool) $this->adapter->has('to.txt'));
+        self::assertFalse((bool) $this->adapter->fileExists('to.txt'));
         $this->client->shouldReceive('copyObject')
             ->withArgs([[
                 'Bucket' => 'test',
@@ -328,16 +262,16 @@ class MockAdapterTest extends TestCase
                 'Key' => 'from.txt',
             ],
             ])->andReturn(new Model());
-        $this->adapter->rename('from.txt', 'to.txt');
+        $this->adapter->move('from.txt', 'to.txt', new Config());
         $this->client->shouldReceive('getObjectMetadata')
             ->withArgs([[
                 'Bucket' => 'test',
                 'Key' => 'from.txt',
             ],
             ])->andThrow(new ObsException());
-        self::assertFalse((bool) $this->adapter->has('from.txt'));
+        self::assertFalse((bool) $this->adapter->fileExists('from.txt'));
         $this->mockGetObject('to.txt', 'write');
-        self::assertSame('write', $this->adapter->read('to.txt')['contents']);
+        self::assertSame('write', $this->adapter->read('to.txt'));
         $this->client->shouldReceive('deleteObject')
             ->withArgs([[
                 'Bucket' => 'test',
@@ -417,7 +351,8 @@ class MockAdapterTest extends TestCase
                 'Key' => 'path/file.txt',
             ],
             ])->andReturn(new Model());
-        self::assertTrue($this->adapter->deleteDir('path'));
+        $this->adapter->deleteDirectory('path');
+        self::assertTrue(true);
     }
 
     public function testWriteStream(): void
@@ -425,12 +360,12 @@ class MockAdapterTest extends TestCase
         $this->mockPutObject('file.txt', 'write');
         $this->adapter->writeStream('file.txt', $this->streamFor('write')->detach(), new Config());
         $this->mockGetObject('file.txt', 'write');
-        self::assertSame('write', $this->adapter->read('file.txt')['contents']);
+        self::assertSame('write', $this->adapter->read('file.txt'));
     }
 
     public function provideVisibilities()
     {
-        return [[AdapterInterface::VISIBILITY_PUBLIC], [AdapterInterface::VISIBILITY_PRIVATE]];
+        return [[Visibility::PUBLIC], [Visibility::PRIVATE]];
     }
 
     private function mockGetVisibility($path, $visibility): void
@@ -445,7 +380,7 @@ class MockAdapterTest extends TestCase
                 'DisplayName' => 'zingimmick',
                 'ID' => '0c85ae1126000f380f21c00e77706640',
             ],
-            'Grants' => $visibility === AdapterInterface::VISIBILITY_PRIVATE ? [
+            'Grants' => $visibility === Visibility::PRIVATE ? [
                 [
                     'Grantee' => [
                         'DisplayName' => 'zingimmick',
@@ -498,13 +433,14 @@ class MockAdapterTest extends TestCase
             'visibility' => $visibility,
         ]));
         $this->mockGetVisibility('file.txt', $visibility);
-        self::assertSame($visibility, $this->adapter->getVisibility('file.txt')['visibility']);
+        self::assertSame($visibility, $this->adapter->visibility('file.txt')['visibility']);
     }
 
     public function testWriteStreamWithExpires(): void
     {
         $this->client->shouldReceive('putObject')
             ->withArgs([[
+                'ContentType' => 'text/plain',
                 'Expires' => 20,
                 'Bucket' => 'test',
                 'Key' => 'file.txt',
@@ -515,14 +451,13 @@ class MockAdapterTest extends TestCase
             'Expires' => 20,
         ]));
         $this->mockGetObject('file.txt', 'write');
-        self::assertSame('write', $this->adapter->read('file.txt')['contents']);
+        self::assertSame('write', $this->adapter->read('file.txt'));
     }
 
     public function testWriteStreamWithMimetype(): void
     {
         $this->client->shouldReceive('putObject')
             ->withArgs([[
-                'mimetype' => 'image/png',
                 'ContentType' => 'image/png',
                 'Bucket' => 'test',
                 'Key' => 'file.txt',
@@ -530,7 +465,7 @@ class MockAdapterTest extends TestCase
             ],
             ])->andReturn(new Model());
         $this->adapter->writeStream('file.txt', $this->streamFor('write')->detach(), new Config([
-            'mimetype' => 'image/png',
+            'ContentType' => 'image/png',
         ]));
         $this->client->shouldReceive('getObjectMetadata')
             ->once()
@@ -565,7 +500,7 @@ class MockAdapterTest extends TestCase
                 'HttpStatusCode' => 200,
                 'Reason' => 'OK',
             ]));
-        self::assertSame('image/png', $this->adapter->getMimetype('file.txt')['mimetype']);
+        self::assertSame('image/png', $this->adapter->mimeType('file.txt')['mime_type']);
     }
 
     public function testDelete(): void
@@ -573,7 +508,7 @@ class MockAdapterTest extends TestCase
         $this->mockPutObject('file.txt', 'write');
         $this->adapter->writeStream('file.txt', $this->streamFor('write')->detach(), new Config());
         $this->mockGetMetadata('file.txt');
-        self::assertTrue((bool) $this->adapter->has('file.txt'));
+        self::assertTrue((bool) $this->adapter->fileExists('file.txt'));
         $this->client->shouldReceive('deleteObject')
             ->withArgs([[
                 'Bucket' => 'test',
@@ -587,7 +522,7 @@ class MockAdapterTest extends TestCase
                 'Key' => 'file.txt',
             ],
             ])->andThrow(new ObsException());
-        self::assertFalse((bool) $this->adapter->has('file.txt'));
+        self::assertFalse((bool) $this->adapter->fileExists('file.txt'));
     }
 
     public function testWrite(): void
@@ -595,33 +530,20 @@ class MockAdapterTest extends TestCase
         $this->mockPutObject('file.txt', 'write');
         $this->adapter->write('file.txt', 'write', new Config());
         $this->mockGetObject('file.txt', 'write');
-        self::assertSame('write', $this->adapter->read('file.txt')['contents']);
+        self::assertSame('write', $this->adapter->read('file.txt'));
     }
 
     public function testRead(): void
     {
-        $this->client->shouldReceive('getObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'fixture/read.txt',
-            ],
-            ])->andReturn(new Model([
-                'Body' => $this->streamFor('read-test'),
-            ]));
-        self::assertSame('read-test', $this->adapter->read('fixture/read.txt')['contents']);
+        $this->mockGetObject('fixture/read.txt', 'read-test');
+        self::assertSame('read-test', $this->adapter->read('fixture/read.txt'));
     }
 
     public function testReadStream(): void
     {
-        $this->client->shouldReceive('getObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'fixture/read.txt',
-            ],
-            ])->andReturn(new Model([
-                'Body' => $this->streamFor('read-test'),
-            ]));
-        self::assertSame('read-test', stream_get_contents($this->adapter->readStream('fixture/read.txt')['stream']));
+        $this->mockGetObject('fixture/read.txt', 'read-test');
+
+        self::assertSame('read-test', stream_get_contents($this->adapter->readStream('fixture/read.txt')));
     }
 
     public function testGetVisibility(): void
@@ -655,16 +577,7 @@ class MockAdapterTest extends TestCase
                 ],
                 ],
             ]));
-        self::assertSame(
-            AdapterInterface::VISIBILITY_PRIVATE,
-            $this->adapter->getVisibility('fixture/read.txt')['visibility']
-        );
-    }
-
-    public function testGetMetadata(): void
-    {
-        $this->mockGetMetadata('fixture/read.txt');
-        self::assertIsArray($this->adapter->getMetadata('fixture/read.txt'));
+        self::assertSame(Visibility::PRIVATE, $this->adapter->visibility('fixture/read.txt')['visibility']);
     }
 
     private function mockGetMetadata($path): void
@@ -780,7 +693,7 @@ class MockAdapterTest extends TestCase
                     'Reason' => 'OK',
                 ]
             ));
-        self::assertNotEmpty($this->adapter->listContents('path'));
+        self::assertNotEmpty($this->adapter->listContents('path', false));
         $this->client->shouldReceive('listObjects')
             ->withArgs([[
                 'Bucket' => 'test',
@@ -793,7 +706,7 @@ class MockAdapterTest extends TestCase
                 'NextMarker' => '',
                 'Contents' => [],
             ]));
-        self::assertEmpty($this->adapter->listContents('path1'));
+        self::assertEmpty(iterator_to_array($this->adapter->listContents('path1', false)));
         $this->mockPutObject('a/b/file.txt', 'test');
         $this->adapter->write('a/b/file.txt', 'test', new Config());
         $this->client->shouldReceive('listObjects')
@@ -845,7 +758,7 @@ class MockAdapterTest extends TestCase
                 'NextMarker' => '',
                 'Contents' => [[
                     'Key' => 'a/b/file.txt',
-                    'LastModified' => 'Mon, 31 May 2021 06:52:32 GMT',
+                    'LastModified' => '2021-05-31T15:23:24.217Z',
                     'ETag' => 'd41d8cd98f00b204e9800998ecf8427e',
                     'Size' => 9,
                     'StorageClass' => 'STANDARD_IA',
@@ -865,72 +778,41 @@ class MockAdapterTest extends TestCase
                 'Reason' => 'OK',
             ]));
         $this->mockGetMetadata('a/b/file.txt');
-        self::assertSame([[
-            'type' => 'file',
-            'mimetype' => null,
-            'path' => 'a/b/file.txt',
-            'timestamp' => 1622443952,
-            'size' => 9,
-        ], [
-            'type' => 'dir',
-            'path' => 'a/b/',
-        ],
-        ], $this->adapter->listContents('a', true));
+        self::assertEquals([new FileAttributes(
+            'a/b/file.txt',
+            9,
+            null,
+            1622474604,
+            null,
+            [
+                'StorageClass' => 'STANDARD_IA',
+                'ETag' => 'd41d8cd98f00b204e9800998ecf8427e',
+            ]
+        ), new DirectoryAttributes('a/b/'),
+        ], iterator_to_array($this->adapter->listContents('a', true)));
     }
 
     public function testGetSize(): void
     {
         $this->mockGetMetadata('fixture/read.txt');
-        self::assertSame(9, $this->adapter->getSize('fixture/read.txt')['size']);
+        self::assertSame(9, $this->adapter->fileSize('fixture/read.txt')->fileSize());
     }
 
     public function testGetTimestamp(): void
     {
         $this->mockGetMetadata('fixture/read.txt');
-        self::assertSame(1622443952, $this->adapter->getTimestamp('fixture/read.txt')['timestamp']);
+        self::assertSame(1622443952, $this->adapter->lastModified('fixture/read.txt')->lastModified());
     }
 
     public function testGetMimetype(): void
     {
         $this->mockGetMetadata('fixture/read.txt');
-        self::assertSame('text/plain', $this->adapter->getMimetype('fixture/read.txt')['mimetype']);
+        self::assertSame('text/plain', $this->adapter->mimeType('fixture/read.txt')->mimeType());
     }
 
     public function testHas(): void
     {
         $this->mockGetMetadata('fixture/read.txt');
-        self::assertTrue((bool) $this->adapter->has('fixture/read.txt'));
-    }
-
-    public function testSignUrl(): void
-    {
-        $this->client->shouldReceive('createSignedUrl')
-            ->withArgs([[
-                'Method' => 'GET',
-                'Bucket' => 'test',
-                'Key' => 'fixture/read.txt',
-                'Expires' => 10,
-                'QueryParams' => [],
-            ],
-            ])->andReturn(new Model([
-                'SignedUrl' => 'signed-url',
-            ]));
-        self::assertSame('signed-url', $this->adapter->signUrl('fixture/read.txt', 10, []));
-    }
-
-    public function testGetTemporaryUrl(): void
-    {
-        $this->client->shouldReceive('createSignedUrl')
-            ->withArgs([[
-                'Method' => 'GET',
-                'Bucket' => 'test',
-                'Key' => 'fixture/read.txt',
-                'Expires' => 10,
-                'QueryParams' => [],
-            ],
-            ])->andReturn(new Model([
-                'SignedUrl' => 'signed-url',
-            ]));
-        self::assertSame('signed-url', $this->adapter->getTemporaryUrl('fixture/read.txt', 10, []));
+        self::assertTrue((bool) $this->adapter->fileExists('fixture/read.txt'));
     }
 }

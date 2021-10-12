@@ -29,47 +29,10 @@ $config = [
    'secret' => 'aW52YWxpZC1zZWNyZXQ=',
    'bucket' => 'test',
    'endpoint' => 'obs.cn-east-3.myhuaweicloud.com',
-   'is_cname' => true
 ];
-
-$options = [
-    'url' => 'https://oss.cdn.com',
-    'bucket_endpoint' => $config['is_cname'] ?? false
-];
-
 $client = new ObsClient($config);
-$adapter = new ObsAdapter($client, $config['endpoint'], $config['bucket'], $prefix, $options);
+$adapter = new ObsAdapter($client, $config['bucket'], $prefix, null, null, $config['options']);
 $flysystem = new Filesystem($adapter);
-```
-
-## Plugins
-
-```php
-use Zing\Flysystem\Obs\Plugins\FileUrl;
-use Zing\Flysystem\Obs\Plugins\SignUrl;
-use Zing\Flysystem\Obs\Plugins\TemporaryUrl;
-use Zing\Flysystem\Obs\Plugins\SetBucket;
-
-/** @var \League\Flysystem\Filesystem $filesystem */
-
-// get file url
-$filesystem->addPlugin(new FileUrl());
-$filesystem->getUrl('file.txt');
-
-// get temporary url
-$filesystem->addPlugin(new SignUrl());
-$timeout = 30;
-// GET
-$filesystem->signUrl('file.txt', $timeout, ['x-image-process' => 'image/crop,x_100,y_50']);
-// PUT
-$filesystem->signUrl('file.txt', $timeout, ['x-image-process' => 'image/crop,x_100,y_50'], 'PUT');
-// alias for signUrl()
-$filesystem->addPlugin(new TemporaryUrl());
-$filesystem->getTemporaryUrl('file.txt', $timeout);
-
-// change bucket
-$filesystem->addPlugin(new SetBucket());
-$filesystem->bucket('test')->has('file.txt');
 ```
 
 ## Reference
