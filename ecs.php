@@ -22,6 +22,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         PhpUnitInternalClassFixer::class,
         PhpUnitTestClassRequiresCoversFixer::class,
         PhpUnitStrictFixer::class,
+        \PhpCsFixer\Fixer\ReturnNotation\ReturnAssignmentFixer::class,
     ]);
     $parameters->set(
         Option::PATHS,

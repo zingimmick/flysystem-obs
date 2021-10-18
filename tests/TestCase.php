@@ -10,12 +10,26 @@ use function GuzzleHttp\Psr7\stream_for;
 
 class TestCase extends BaseTestCase
 {
-    protected function streamFor($resource = '', array $options = [])
+    /**
+     * @param array<string,mixed> $options
+     */
+    protected function streamFor(string $content = '', array $options = []): \Psr\Http\Message\StreamInterface
     {
         if (function_exists('\GuzzleHttp\Psr7\stream_for')) {
-            return stream_for($resource, $options);
+            return stream_for($content, $options);
         }
 
-        return Utils::streamFor($resource, $options);
+        return Utils::streamFor($content, $options);
+    }
+
+    /**
+     * @param array<string,mixed> $options
+     *
+     * @return resource|null
+     */
+    protected function streamForResource(string $content = '', array $options = [])
+    {
+        return $this->streamFor($content, $options)
+            ->detach();
     }
 }
