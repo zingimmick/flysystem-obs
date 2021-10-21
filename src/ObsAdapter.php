@@ -274,12 +274,15 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * read a file stream.
      *
-     * @return resource|null
+     * @return resource
      */
     public function readStream(string $path)
     {
-        return $this->getObject($path)
+        /** @var resource $resource */
+        $resource = $this->getObject($path)
             ->detach();
+
+        return $resource;
     }
 
     /**

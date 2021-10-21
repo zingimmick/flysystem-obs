@@ -6,6 +6,7 @@ use PhpCsFixer\Fixer\ControlStructure\YodaStyleFixer;
 use PhpCsFixer\Fixer\PhpUnit\PhpUnitInternalClassFixer;
 use PhpCsFixer\Fixer\PhpUnit\PhpUnitStrictFixer;
 use PhpCsFixer\Fixer\PhpUnit\PhpUnitTestClassRequiresCoversFixer;
+use PhpCsFixer\Fixer\ReturnNotation\ReturnAssignmentFixer;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symplify\EasyCodingStandard\ValueObject\Option;
 use Zing\CodingStandard\Set\ECSSetList;
@@ -22,7 +23,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         PhpUnitInternalClassFixer::class,
         PhpUnitTestClassRequiresCoversFixer::class,
         PhpUnitStrictFixer::class,
-        \PhpCsFixer\Fixer\ReturnNotation\ReturnAssignmentFixer::class,
+        ReturnAssignmentFixer::class,
     ]);
     $parameters->set(
         Option::PATHS,
