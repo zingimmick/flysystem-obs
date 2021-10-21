@@ -6,6 +6,8 @@ namespace Zing\Flysystem\Obs\Tests;
 
 use League\Flysystem\Config;
 use League\Flysystem\DirectoryAttributes;
+use League\Flysystem\FileAttributes;
+use League\Flysystem\StorageAttributes;
 use League\Flysystem\Visibility;
 use Obs\ObsClient;
 use Zing\Flysystem\Obs\ObsAdapter;
@@ -75,8 +77,12 @@ class ValidAdapterTest extends TestCase
     public function testCreateDir(): void
     {
         $this->obsAdapter->createDirectory('fixture/path', new Config());
-        self::assertEquals([new DirectoryAttributes('fixture/path'),
-        ], iterator_to_array($this->obsAdapter->listContents('fixture/path', false)));
+        $contents = iterator_to_array($this->obsAdapter->listContents('fixture/path', false));
+        self::assertContainsOnlyInstancesOf(DirectoryAttributes::class, $contents);
+        self::assertCount(1, $contents);
+        /** @var \League\Flysystem\DirectoryAttributes $directory */
+        $directory = $contents[0];
+        self::assertSame('fixture/path', $directory->path());
     }
 
     public function testSetVisibility(): void
@@ -178,8 +184,24 @@ class ValidAdapterTest extends TestCase
     {
         self::assertNotEmpty(iterator_to_array($this->obsAdapter->listContents('fixture', false)));
         self::assertEmpty(iterator_to_array($this->obsAdapter->listContents('path1', false)));
-        $this->obsAdapter->write('fixture/path/file.txt', 'test', new Config());
-        $this->obsAdapter->listContents('a', true);
+        $this->obsAdapter->write('fixture/path/dir/file.txt', 'test', new Config());
+        $contents = iterator_to_array($this->obsAdapter->listContents('fixture/path', true));
+        self::assertContainsOnlyInstancesOf(StorageAttributes::class, $contents);
+        self::assertCount(2, $contents);
+        /** @var \League\Flysystem\FileAttributes $file */
+        $file = $contents[0];
+        self::assertInstanceOf(FileAttributes::class, $file);
+        self::assertSame('fixture/path/dir/file.txt', $file->path());
+        self::assertSame(4, $file->fileSize());
+
+        self::assertNull($file->mimeType());
+        self::assertNotNull($file->lastModified());
+        self::assertNull($file->visibility());
+        self::assertIsArray($file->extraMetadata());
+        /** @var \League\Flysystem\DirectoryAttributes $directory */
+        $directory = $contents[1];
+        self::assertInstanceOf(DirectoryAttributes::class, $directory);
+        self::assertSame('fixture/path/dir/', $directory->path());
     }
 
     public function testGetSize(): void

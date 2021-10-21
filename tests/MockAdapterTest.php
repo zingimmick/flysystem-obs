@@ -7,6 +7,7 @@ namespace Zing\Flysystem\Obs\Tests;
 use League\Flysystem\Config;
 use League\Flysystem\DirectoryAttributes;
 use League\Flysystem\FileAttributes;
+use League\Flysystem\StorageAttributes;
 use League\Flysystem\Visibility;
 use Mockery;
 use Obs\Internal\Common\Model;
@@ -153,10 +154,12 @@ class MockAdapterTest extends TestCase
                     'Reason' => 'OK',
                 ]
             ));
-        self::assertEquals(
-            [new DirectoryAttributes('path')],
-            iterator_to_array($this->obsAdapter->listContents('path', false))
-        );
+        $contents = iterator_to_array($this->obsAdapter->listContents('path', false));
+        self::assertContainsOnlyInstancesOf(DirectoryAttributes::class, $contents);
+        self::assertCount(1, $contents);
+        /** @var \League\Flysystem\DirectoryAttributes $directory */
+        $directory = $contents[0];
+        self::assertSame('path', $directory->path());
     }
 
     public function testSetVisibility(): void
@@ -793,18 +796,26 @@ class MockAdapterTest extends TestCase
                 'Reason' => 'OK',
             ]));
         $this->mockGetMetadata('a/b/file.txt');
-        self::assertEquals([new FileAttributes(
-            'a/b/file.txt',
-            9,
-            null,
-            1622474604,
-            null,
-            [
-                'StorageClass' => 'STANDARD_IA',
-                'ETag' => 'd41d8cd98f00b204e9800998ecf8427e',
-            ]
-        ), new DirectoryAttributes('a/b/'),
-        ], iterator_to_array($this->obsAdapter->listContents('a', true)));
+        $contents = iterator_to_array($this->obsAdapter->listContents('a', true));
+        self::assertContainsOnlyInstancesOf(StorageAttributes::class, $contents);
+        self::assertCount(2, $contents);
+        /** @var \League\Flysystem\FileAttributes $file */
+        $file = $contents[0];
+        self::assertInstanceOf(FileAttributes::class, $file);
+        self::assertSame('a/b/file.txt', $file->path());
+        self::assertSame(9, $file->fileSize());
+
+        self::assertNull($file->mimeType());
+        self::assertSame(1622474604, $file->lastModified());
+        self::assertNull($file->visibility());
+        self::assertSame([
+            'StorageClass' => 'STANDARD_IA',
+            'ETag' => 'd41d8cd98f00b204e9800998ecf8427e',
+        ], $file->extraMetadata());
+        /** @var \League\Flysystem\DirectoryAttributes $directory */
+        $directory = $contents[1];
+        self::assertInstanceOf(DirectoryAttributes::class, $directory);
+        self::assertSame('a/b/', $directory->path());
     }
 
     public function testGetSize(): void
