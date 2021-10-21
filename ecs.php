@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use PhpCsFixer\Fixer\ControlStructure\YodaStyleFixer;
 use PhpCsFixer\Fixer\PhpUnit\PhpUnitInternalClassFixer;
-use PhpCsFixer\Fixer\PhpUnit\PhpUnitStrictFixer;
 use PhpCsFixer\Fixer\PhpUnit\PhpUnitTestClassRequiresCoversFixer;
 use PhpCsFixer\Fixer\ReturnNotation\ReturnAssignmentFixer;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -22,7 +21,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         YodaStyleFixer::class => null,
         PhpUnitInternalClassFixer::class,
         PhpUnitTestClassRequiresCoversFixer::class,
-        PhpUnitStrictFixer::class,
         ReturnAssignmentFixer::class,
     ]);
     $parameters->set(
