@@ -25,11 +25,14 @@ class TestCase extends BaseTestCase
     /**
      * @param array<string,mixed> $options
      *
-     * @return resource|null
+     * @return resource
      */
     protected function streamForResource(string $content = '', array $options = [])
     {
-        return $this->streamFor($content, $options)
+        /** @var resource $resource */
+        $resource = $this->streamFor($content, $options)
             ->detach();
+
+        return $resource;
     }
 }
