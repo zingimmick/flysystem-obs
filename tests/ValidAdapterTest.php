@@ -90,10 +90,10 @@ class ValidAdapterTest extends TestCase
     public function testRename(): void
     {
         $this->obsAdapter->write('fixture/from.txt', 'write', new Config());
-        self::assertTrue((bool) $this->obsAdapter->fileExists('fixture/from.txt'));
-        self::assertFalse((bool) $this->obsAdapter->fileExists('fixture/to.txt'));
+        self::assertTrue($this->obsAdapter->fileExists('fixture/from.txt'));
+        self::assertFalse($this->obsAdapter->fileExists('fixture/to.txt'));
         $this->obsAdapter->move('fixture/from.txt', 'fixture/to.txt', new Config());
-        self::assertFalse((bool) $this->obsAdapter->fileExists('fixture/from.txt'));
+        self::assertFalse($this->obsAdapter->fileExists('fixture/from.txt'));
         self::assertSame('write', $this->obsAdapter->read('fixture/to.txt'));
         $this->obsAdapter->delete('fixture/to.txt');
     }
@@ -106,7 +106,7 @@ class ValidAdapterTest extends TestCase
 
     public function testWriteStream(): void
     {
-        $this->obsAdapter->writeStream('fixture/file.txt', $this->streamFor('write')->detach(), new Config());
+        $this->obsAdapter->writeStream('fixture/file.txt', $this->streamForResource('write'), new Config());
         self::assertSame('write', $this->obsAdapter->read('fixture/file.txt'));
     }
 
@@ -120,12 +120,10 @@ class ValidAdapterTest extends TestCase
 
     /**
      * @dataProvider provideVisibilities
-     *
-     * @param $visibility
      */
     public function testWriteStreamWithVisibility(string $visibility): void
     {
-        $this->obsAdapter->writeStream('fixture/file.txt', $this->streamFor('write')->detach(), new Config([
+        $this->obsAdapter->writeStream('fixture/file.txt', $this->streamForResource('write'), new Config([
             'visibility' => $visibility,
         ]));
         self::assertSame($visibility, $this->obsAdapter->visibility('fixture/file.txt')['visibility']);
@@ -133,7 +131,7 @@ class ValidAdapterTest extends TestCase
 
     public function testWriteStreamWithExpires(): void
     {
-        $this->obsAdapter->writeStream('fixture/file.txt', $this->streamFor('write')->detach(), new Config([
+        $this->obsAdapter->writeStream('fixture/file.txt', $this->streamForResource('write'), new Config([
             'Expires' => 20,
         ]));
         self::assertSame('write', $this->obsAdapter->read('fixture/file.txt'));
@@ -141,7 +139,7 @@ class ValidAdapterTest extends TestCase
 
     public function testWriteStreamWithMimetype(): void
     {
-        $this->obsAdapter->writeStream('fixture/file.txt', $this->streamFor('write')->detach(), new Config([
+        $this->obsAdapter->writeStream('fixture/file.txt', $this->streamForResource('write'), new Config([
             'ContentType' => 'image/png',
         ]));
         self::assertSame('image/png', $this->obsAdapter->mimeType('fixture/file.txt')['mime_type']);
@@ -149,10 +147,10 @@ class ValidAdapterTest extends TestCase
 
     public function testDelete(): void
     {
-        $this->obsAdapter->writeStream('fixture/file.txt', $this->streamFor('test')->detach(), new Config());
-        self::assertTrue((bool) $this->obsAdapter->fileExists('fixture/file.txt'));
+        $this->obsAdapter->writeStream('fixture/file.txt', $this->streamForResource('test'), new Config());
+        self::assertTrue($this->obsAdapter->fileExists('fixture/file.txt'));
         $this->obsAdapter->delete('fixture/file.txt');
-        self::assertFalse((bool) $this->obsAdapter->fileExists('fixture/file.txt'));
+        self::assertFalse($this->obsAdapter->fileExists('fixture/file.txt'));
     }
 
     public function testWrite(): void
@@ -201,6 +199,6 @@ class ValidAdapterTest extends TestCase
 
     public function testHas(): void
     {
-        self::assertTrue((bool) $this->obsAdapter->fileExists('fixture/read.txt'));
+        self::assertTrue($this->obsAdapter->fileExists('fixture/read.txt'));
     }
 }

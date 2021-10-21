@@ -44,9 +44,9 @@ class ObsAdapter implements FilesystemAdapter
     private const MAX_KEYS = 1000;
 
     /**
-     * @var array
+     * @var string[]
      */
-    protected static $metaOptions = ['ACL', 'Expires', 'StorageClass', 'ContentType'];
+    private const AVAILABLE_OPTIONS = ['ACL', 'Expires', 'StorageClass', 'ContentType'];
 
     /**
      * @var string
@@ -54,7 +54,7 @@ class ObsAdapter implements FilesystemAdapter
     protected $bucket;
 
     /**
-     * @var array
+     * @var array<string,mixed>
      */
     protected $options = [];
 
@@ -78,6 +78,9 @@ class ObsAdapter implements FilesystemAdapter
      */
     private $mimeTypeDetector;
 
+    /**
+     * @param array<string,mixed> $options
+     */
     public function __construct(
         ObsClient $client,
         string $bucket,
@@ -96,10 +99,21 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * write a file.
-     *
-     * @return array|false
      */
     public function write(string $path, string $contents, Config $config): void
+    {
+        $this->upload($path, $contents, $config);
+    }
+
+    public function writeStream(string $path, $contents, Config $config): void
+    {
+        $this->upload($path, $contents, $config);
+    }
+
+    /**
+     * @param resource|string $contents
+     */
+    private function upload(string $path, $contents, Config $config): void
     {
         $options = $this->createOptionsFromConfig($config);
         if (! isset($options['ACL'])) {
@@ -127,14 +141,6 @@ class ObsAdapter implements FilesystemAdapter
         } catch (ObsException $obsException) {
             throw UnableToWriteFile::atLocation($path, '', $obsException);
         }
-    }
-
-    /**
-     * @param resource $contents
-     */
-    public function writeStream(string $path, $contents, Config $config): void
-    {
-        $this->write($path, stream_get_contents($contents), $config);
     }
 
     /**
@@ -207,8 +213,6 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * visibility.
-     *
-     * @return array|false
      */
     public function setVisibility(string $path, string $visibility): void
     {
@@ -225,8 +229,6 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * Get the visibility of a file.
-     *
-     * @return array|false
      */
     public function visibility(string $path): FileAttributes
     {
@@ -248,8 +250,6 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * Check whether a file exists.
-     *
-     * @return array|bool|null
      */
     public function fileExists(string $path): bool
     {
@@ -264,8 +264,6 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * read a file.
-     *
-     * @return array|false
      */
     public function read(string $path): string
     {
@@ -276,7 +274,7 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * read a file stream.
      *
-     * @return resource
+     * @return resource|null
      */
     public function readStream(string $path)
     {
@@ -287,7 +285,7 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * Lists all files in the directory.
      *
-     * @return \Traversable
+     * @return \Traversable<\League\Flysystem\StorageAttributes>
      */
     public function listContents(string $path, bool $deep): iterable
     {
@@ -326,6 +324,9 @@ class ObsAdapter implements FilesystemAdapter
         return $attributes;
     }
 
+    /**
+     * @param array<string,mixed> $metadata
+     */
     private function mapObjectMetadata(array $metadata, ?string $path = null): StorageAttributes
     {
         if ($path === null) {
@@ -346,6 +347,11 @@ class ObsAdapter implements FilesystemAdapter
         );
     }
 
+    /**
+     * @param array<string,mixed> $metadata
+     *
+     * @return array<string,mixed>
+     */
     private function extractExtraMetadata(array $metadata): array
     {
         $extracted = [];
@@ -361,8 +367,6 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * get the size of file.
-     *
-     * @return array|false
      */
     public function fileSize(string $path): FileAttributes
     {
@@ -371,19 +375,12 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * get mime type.
-     *
-     * @return array|false
      */
     public function mimeType(string $path): FileAttributes
     {
         return $this->getMetadata($path, FileAttributes::ATTRIBUTE_MIME_TYPE);
     }
 
-    /**
-     * get timestamp.
-     *
-     * @return array|false
-     */
     public function lastModified(string $path): FileAttributes
     {
         return $this->getMetadata($path, FileAttributes::ATTRIBUTE_LAST_MODIFIED);
@@ -391,10 +388,8 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * Read an object from the ObsClient.
-     *
-     * @param $path
      */
-    protected function getObject($path): StreamInterface
+    protected function getObject(string $path): StreamInterface
     {
         try {
             $model = $this->client->getObject([
@@ -410,6 +405,8 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * File list core method.
+     *
+     * @return array<string,mixed>
      */
     public function listDirObjects(string $dirname = '', bool $recursive = false): array
     {
@@ -441,7 +438,12 @@ class ObsAdapter implements FilesystemAdapter
         return $result;
     }
 
-    private function processRecursive(array $result, $recursive): array
+    /**
+     * @param array<string,array> $result
+     *
+     * @return array<string,array>
+     */
+    private function processRecursive(array $result, bool $recursive): array
     {
         if ($recursive) {
             foreach ($result['prefix'] as $prefix) {
@@ -453,7 +455,13 @@ class ObsAdapter implements FilesystemAdapter
         return $result;
     }
 
-    private function processObjects(array $result, $objects, $dirname): array
+    /**
+     * @param array<string,array> $result
+     * @param array<string,mixed>|null $objects
+     *
+     * @return array<string,array>
+     */
+    private function processObjects(array $result, ?array $objects, string $dirname): array
     {
         if (! empty($objects)) {
             foreach ($objects as $object) {
@@ -468,7 +476,13 @@ class ObsAdapter implements FilesystemAdapter
         return $result;
     }
 
-    private function processPrefixes(array $result, $prefixes): array
+    /**
+     * @param array<string,array> $result
+     * @param array<string,mixed>|null $prefixes
+     *
+     * @return array<string,array>
+     */
+    private function processPrefixes(array $result, ?array $prefixes): array
     {
         if (! empty($prefixes)) {
             foreach ($prefixes as $prefix) {
@@ -483,12 +497,14 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * Get options from the config.
+     *
+     * @return array<string, mixed>
      */
     protected function createOptionsFromConfig(Config $config): array
     {
         $options = $this->options;
 
-        foreach (static::$metaOptions as $option) {
+        foreach (self::AVAILABLE_OPTIONS as $option) {
             $value = $config->get($option, '__NOT_SET__');
 
             if ($value !== '__NOT_SET__') {

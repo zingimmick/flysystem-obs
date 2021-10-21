@@ -21,6 +21,7 @@
     },
     "require-dev": {
         "mockery/mockery": "~1.3.3 || ^1.4.2",
+        "phpstan/phpstan-mockery": "^0.12.14",
         "phpunit/phpunit": "^8.0,<8.5.12 || ^9.3.3",
         "zing/coding-standard": "^4.0"
     },
@@ -43,7 +44,8 @@
         "test:phpunit": "phpunit --colors=always",
         "lint": [
             "@lint:rector",
-            "@lint:ecs"
+            "@lint:ecs",
+            "@lint:phpstan"
         ],
         "fix": [
             "@fix:rector",

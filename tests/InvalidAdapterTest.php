@@ -83,7 +83,7 @@ class InvalidAdapterTest extends TestCase
     public function testWriteStream(): void
     {
         $this->expectException(UnableToWriteFile::class);
-        $this->obsAdapter->writeStream('file.txt', $this->streamFor('test')->detach(), new Config());
+        $this->obsAdapter->writeStream('file.txt', $this->streamForResource('test'), new Config());
     }
 
     public function testDelete(): void
