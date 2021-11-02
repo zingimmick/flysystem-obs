@@ -117,6 +117,7 @@ class ObsAdapter implements FilesystemAdapter
     {
         $options = $this->createOptionsFromConfig($config);
         if (! isset($options['ACL'])) {
+            /** @var string|null $visibility */
             $visibility = $config->get(Config::OPTION_VISIBILITY);
             if ($visibility !== null) {
                 $options['ACL'] = $options['ACL'] ?? $this->visibilityConverter->visibilityToAcl($visibility);
@@ -328,12 +329,12 @@ class ObsAdapter implements FilesystemAdapter
     }
 
     /**
-     * @param array<string,mixed> $metadata
+     * @param array{Key?: string, Prefix: ?string, ContentLength?: int, Size?: int, LastModified: string, ContentType?: string} $metadata
      */
     private function mapObjectMetadata(array $metadata, ?string $path = null): StorageAttributes
     {
         if ($path === null) {
-            $path = $this->pathPrefixer->stripPrefix($metadata['Key'] ?? $metadata['Prefix']);
+            $path = $this->pathPrefixer->stripPrefix((string) ($metadata['Key'] ?? $metadata['Prefix']));
         }
 
         if (substr($path, -1) === '/') {
@@ -344,7 +345,7 @@ class ObsAdapter implements FilesystemAdapter
             $path,
             $metadata['ContentLength'] ?? $metadata['Size'] ?? null,
             null,
-            strtotime($metadata['LastModified']),
+            strtotime($metadata['LastModified']) ?: null,
             $metadata['ContentType'] ?? null,
             $this->extractExtraMetadata($metadata)
         );
@@ -409,7 +410,7 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * File list core method.
      *
-     * @return array<string,mixed>
+     * @return array{prefix: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified: string, ContentType?: string}>}
      */
     public function listDirObjects(string $dirname = '', bool $recursive = false): array
     {
@@ -442,9 +443,9 @@ class ObsAdapter implements FilesystemAdapter
     }
 
     /**
-     * @param array<string,array> $result
+     * @param array{prefix: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified: string, ContentType?: string}>} $result
      *
-     * @return array<string,array>
+     * @return array{prefix: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified: string, ContentType?: string}>}
      */
     private function processRecursive(array $result, bool $recursive): array
     {
@@ -459,18 +460,17 @@ class ObsAdapter implements FilesystemAdapter
     }
 
     /**
-     * @param array<string,array> $result
-     * @param array<string,mixed>|null $objects
+     * @param array{prefix?: array<string>, objects?: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified: string, ContentType?: string}>} $result
+     * @param array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified: string, ContentType?: string}>|null $objects
      *
-     * @return array<string,array>
+     * @return array{prefix?: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified: string, ContentType?: string}>}
      */
     private function processObjects(array $result, ?array $objects, string $dirname): array
     {
         if (! empty($objects)) {
             foreach ($objects as $object) {
-                $result['objects'][] = array_merge($object, [
-                    'Prefix' => $dirname,
-                ]);
+                $object['Prefix'] = $dirname;
+                $result['objects'][] = $object;
             }
         } else {
             $result['objects'] = [];
@@ -480,10 +480,10 @@ class ObsAdapter implements FilesystemAdapter
     }
 
     /**
-     * @param array<string,array> $result
-     * @param array<string,mixed>|null $prefixes
+     * @param array{prefix?: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified: string, ContentType?: string}>} $result
+     * @param array<array<string, string>>|null $prefixes
      *
-     * @return array<string,array>
+     * @return array{prefix: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified: string, ContentType?: string}>}
      */
     private function processPrefixes(array $result, ?array $prefixes): array
     {

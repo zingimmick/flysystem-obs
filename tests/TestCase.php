@@ -11,7 +11,7 @@ use function GuzzleHttp\Psr7\stream_for;
 class TestCase extends BaseTestCase
 {
     /**
-     * @param array<string,mixed> $options
+     * @param array{size?: int, metadata?: array<string, mixed>} $options
      */
     protected function streamFor(string $content = '', array $options = []): \Psr\Http\Message\StreamInterface
     {
@@ -23,7 +23,7 @@ class TestCase extends BaseTestCase
     }
 
     /**
-     * @param array<string,mixed> $options
+     * @param array{size?: int, metadata?: array<string, mixed>} $options
      *
      * @return resource
      */
