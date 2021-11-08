@@ -29,6 +29,9 @@ class PortableVisibilityConverter implements VisibilityConverter
      */
     private const PRIVATE_ACL = ObsClient::AclPrivate;
 
+    /**
+     * @var string
+     */
     private $defaultForDirectories;
 
     public function __construct(string $defaultForDirectories = Visibility::PUBLIC)
