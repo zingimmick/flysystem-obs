@@ -9,7 +9,7 @@ interface VisibilityConverter
     public function visibilityToAcl(string $visibility): string;
 
     /**
-     * @param array<array<string,mixed>> $grants
+     * @param array<array{Grantee?: array<string,mixed>, Permission?: string}> $grants
      */
     public function aclToVisibility(array $grants): string;
 

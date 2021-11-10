@@ -377,11 +377,12 @@ class MockAdapterTest extends TestCase
     }
 
     /**
-     * @return array<int, array<string>>
+     * @return \Iterator<string[]>
      */
-    public function provideVisibilities(): array
+    public function provideVisibilities(): \Iterator
     {
-        return [[Visibility::PUBLIC], [Visibility::PRIVATE]];
+        yield [Visibility::PUBLIC];
+        yield [Visibility::PRIVATE];
     }
 
     private function mockGetVisibility(string $path, string $visibility): void
