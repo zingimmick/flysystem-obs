@@ -1,8 +1,18 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<phpunit bootstrap="vendor/autoload.php" colors="true" verbose="true">
+<phpunit
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+        beStrictAboutOutputDuringTests="true"
+        bootstrap="vendor/autoload.php"
+        colors="true"
+        convertDeprecationsToExceptions="true"
+        failOnRisky="true"
+        failOnWarning="true"
+        verbose="true"
+>
     <testsuites>
         <testsuite name="Flysystem OBS Test Suite">
-            <directory suffix="Test.php">./tests</directory>
+            <directory>./tests</directory>
         </testsuite>
     </testsuites>
     <filter>
