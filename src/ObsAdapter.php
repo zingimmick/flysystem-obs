@@ -97,14 +97,14 @@ class ObsAdapter implements FilesystemAdapter
         $this->options = $options;
     }
 
-    /**
-     * write a file.
-     */
     public function write(string $path, string $contents, Config $config): void
     {
         $this->upload($path, $contents, $config);
     }
 
+    /**
+     * @param resource $contents
+     */
     public function writeStream(string $path, $contents, Config $config): void
     {
         $this->upload($path, $contents, $config);
@@ -144,9 +144,6 @@ class ObsAdapter implements FilesystemAdapter
         }
     }
 
-    /**
-     * rename a file.
-     */
     public function move(string $source, string $destination, Config $config): void
     {
         try {
@@ -157,9 +154,6 @@ class ObsAdapter implements FilesystemAdapter
         }
     }
 
-    /**
-     * copy a file.
-     */
     public function copy(string $source, string $destination, Config $config): void
     {
         try {
@@ -174,9 +168,6 @@ class ObsAdapter implements FilesystemAdapter
         }
     }
 
-    /**
-     * delete a file.
-     */
     public function delete(string $path): void
     {
         try {
@@ -189,9 +180,6 @@ class ObsAdapter implements FilesystemAdapter
         }
     }
 
-    /**
-     * Delete a directory.
-     */
     public function deleteDirectory(string $path): void
     {
         $files = $this->listContents($path, true);
@@ -200,9 +188,6 @@ class ObsAdapter implements FilesystemAdapter
         }
     }
 
-    /**
-     * create a directory.
-     */
     public function createDirectory(string $path, Config $config): void
     {
         try {
@@ -212,9 +197,7 @@ class ObsAdapter implements FilesystemAdapter
         }
     }
 
-    /**
-     * visibility.
-     */
+
     public function setVisibility(string $path, string $visibility): void
     {
         try {
@@ -228,9 +211,7 @@ class ObsAdapter implements FilesystemAdapter
         }
     }
 
-    /**
-     * Get the visibility of a file.
-     */
+
     public function visibility(string $path): FileAttributes
     {
         try {
@@ -249,9 +230,7 @@ class ObsAdapter implements FilesystemAdapter
         return new FileAttributes($path, null, $visibility);
     }
 
-    /**
-     * Check whether a file exists.
-     */
+
     public function fileExists(string $path): bool
     {
         try {
@@ -263,9 +242,7 @@ class ObsAdapter implements FilesystemAdapter
         return true;
     }
 
-    /**
-     * read a file.
-     */
+
     public function read(string $path): string
     {
         return $this->getObject($path)
@@ -273,7 +250,6 @@ class ObsAdapter implements FilesystemAdapter
     }
 
     /**
-     * read a file stream.
      *
      * @return resource
      */
@@ -287,7 +263,6 @@ class ObsAdapter implements FilesystemAdapter
     }
 
     /**
-     * Lists all files in the directory.
      *
      * @return \Traversable<\League\Flysystem\StorageAttributes>
      */
@@ -306,7 +281,7 @@ class ObsAdapter implements FilesystemAdapter
     }
 
     /**
-     * get meta data.
+     * Get the metadata of a file.
      */
     private function getMetadata(string $path, string $type): FileAttributes
     {
@@ -369,17 +344,11 @@ class ObsAdapter implements FilesystemAdapter
         return $extracted;
     }
 
-    /**
-     * get the size of file.
-     */
     public function fileSize(string $path): FileAttributes
     {
         return $this->getMetadata($path, FileAttributes::ATTRIBUTE_FILE_SIZE);
     }
 
-    /**
-     * get mime type.
-     */
     public function mimeType(string $path): FileAttributes
     {
         return $this->getMetadata($path, FileAttributes::ATTRIBUTE_MIME_TYPE);
