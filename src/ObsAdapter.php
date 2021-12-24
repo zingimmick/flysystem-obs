@@ -69,12 +69,12 @@ class ObsAdapter implements FilesystemAdapter
     private $pathPrefixer;
 
     /**
-     * @var \Zing\Flysystem\Obs\VisibilityConverter
+     * @var \Zing\Flysystem\Obs\PortableVisibilityConverter|\Zing\Flysystem\Obs\VisibilityConverter
      */
     private $visibilityConverter;
 
     /**
-     * @var \League\MimeTypeDetection\MimeTypeDetector
+     * @var \League\MimeTypeDetection\FinfoMimeTypeDetector|\League\MimeTypeDetection\MimeTypeDetector
      */
     private $mimeTypeDetector;
 
@@ -197,7 +197,6 @@ class ObsAdapter implements FilesystemAdapter
         }
     }
 
-
     public function setVisibility(string $path, string $visibility): void
     {
         try {
@@ -210,7 +209,6 @@ class ObsAdapter implements FilesystemAdapter
             throw UnableToSetVisibility::atLocation($path, '', $exception);
         }
     }
-
 
     public function visibility(string $path): FileAttributes
     {
@@ -230,7 +228,6 @@ class ObsAdapter implements FilesystemAdapter
         return new FileAttributes($path, null, $visibility);
     }
 
-
     public function fileExists(string $path): bool
     {
         try {
@@ -242,7 +239,6 @@ class ObsAdapter implements FilesystemAdapter
         return true;
     }
 
-
     public function read(string $path): string
     {
         return $this->getObject($path)
@@ -250,7 +246,6 @@ class ObsAdapter implements FilesystemAdapter
     }
 
     /**
-     *
      * @return resource
      */
     public function readStream(string $path)
@@ -263,7 +258,6 @@ class ObsAdapter implements FilesystemAdapter
     }
 
     /**
-     *
      * @return \Traversable<\League\Flysystem\StorageAttributes>
      */
     public function listContents(string $path, bool $deep): iterable
