@@ -48,6 +48,9 @@ class PortableVisibilityConverter implements VisibilityConverter
         return self::PRIVATE_ACL;
     }
 
+    /**
+     * @param array<array{Grantee?: array<string,mixed>, Permission?: string}> $grants
+     */
     public function aclToVisibility(array $grants): string
     {
         foreach ($grants as $grant) {
