@@ -58,6 +58,7 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * @var mixed[]|array<string, bool>|array<string, string>
+     * @phpstan-var array{url?: string, temporary_url?: string, endpoint?: string, bucket_endpoint?: bool}
      */
     protected $options = [];
 

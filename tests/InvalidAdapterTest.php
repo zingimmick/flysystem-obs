@@ -17,6 +17,7 @@ use League\Flysystem\Visibility;
 use Obs\ObsClient;
 use Obs\ObsException;
 use Zing\Flysystem\Obs\ObsAdapter;
+use Zing\Flysystem\Obs\UnableToGetUrl;
 
 class InvalidAdapterTest extends TestCase
 {
@@ -149,6 +150,21 @@ class InvalidAdapterTest extends TestCase
         self::assertFalse($this->obsAdapter->fileExists('file.txt'));
     }
 
+    public function testBucket(): void
+    {
+        $obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '', null, null, [
+            'endpoint' => 'http://obs.cdn.com',
+        ]);
+        self::assertSame('test', $obsAdapter->getBucket());
+    }
+    public function testSetBucket(): void
+    {
+        $obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '', null, null, [
+            'endpoint' => 'http://obs.cdn.com',
+        ]);
+        $obsAdapter->setBucket('new-bucket');
+        self::assertSame('new-bucket', $obsAdapter->getBucket());
+    }
     public function testGetUrl(): void
     {
         $obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '', null, null, [
@@ -156,13 +172,29 @@ class InvalidAdapterTest extends TestCase
         ]);
         self::assertSame('http://test.obs.cdn.com/test', $obsAdapter->getUrl('test'));
     }
-
-    public function testGetUrlWithHttps(): void
+    public function testGetClient(): void
     {
         $obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '', null, null, [
-            'endpoint' => 'https://obs.cdn.com',
+            'endpoint' => 'http://obs.cdn.com',
+        ]);
+        self::assertSame($this->obsClient, $obsAdapter->getClient());
+        self::assertSame($this->obsClient, $obsAdapter->kernel());
+    }
+
+    public function testGetUrlWithoutSchema(): void
+    {
+        $obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '', null, null, [
+            'endpoint' => 'obs.cdn.com',
         ]);
         self::assertSame('https://test.obs.cdn.com/test', $obsAdapter->getUrl('test'));
+    }
+
+    public function testGetUrlWithoutEndpoint(): void
+    {
+        $obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '');
+        $this->expectException(UnableToGetUrl::class);
+        $this->expectExceptionMessage('Unable to get url with option endpoint missing.');
+        $obsAdapter->getUrl('test');
     }
 
     public function testGetUrlWithUrl(): void
