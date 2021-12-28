@@ -842,6 +842,7 @@ class MockAdapterTest extends TestCase
         $this->mockGetMetadata('fixture/read.txt');
         self::assertTrue($this->obsAdapter->fileExists('fixture/read.txt'));
     }
+
     public function testGetTemporaryUrl(): void
     {
         $this->legacyMock->shouldReceive('createSignedUrl')

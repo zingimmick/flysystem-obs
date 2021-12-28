@@ -57,7 +57,7 @@ class ObsAdapter implements FilesystemAdapter
     protected $bucket;
 
     /**
-     * @var array<string,mixed>
+     * @var array{url?: string, temporary_url?: string, endpoint?: string, bucket_endpoint?: bool}
      */
     protected $options = [];
 
@@ -82,7 +82,7 @@ class ObsAdapter implements FilesystemAdapter
     private $mimeTypeDetector;
 
     /**
-     * @param array<string,mixed> $options
+     * @param array{url?: string, temporary_url?: string, endpoint?: string, bucket_endpoint?: bool} $options
      */
     public function __construct(
         ObsClient $client,
@@ -100,17 +100,11 @@ class ObsAdapter implements FilesystemAdapter
         $this->options = $options;
     }
 
-    /**
-     * @return string
-     */
     public function getBucket(): string
     {
         return $this->bucket;
     }
 
-    /**
-     * @return \Obs\ObsClient
-     */
     public function getClient(): ObsClient
     {
         return $this->client;
@@ -124,11 +118,8 @@ class ObsAdapter implements FilesystemAdapter
     public function kernel(): ObsClient
     {
         return $this->getClient();
-}
+    }
 
-    /**
-     * @param string $bucket
-     */
     public function setBucket(string $bucket): void
     {
         $this->bucket = $bucket;
@@ -515,12 +506,6 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * Get the URL for the file at the given path.
-     *
-     * @param string $path
-     *
-     * @throws \RuntimeException
-     *
-     * @return string
      */
     public function getUrl(string $path): string
     {
@@ -533,23 +518,33 @@ class ObsAdapter implements FilesystemAdapter
 
     protected function normalizeHost(): string
     {
+        if (!isset($this->options['endpoint'])){
+            throw UnableToGetUrl::missingOption('endpoint');
+        }
         $endpoint = $this->options['endpoint'];
         if (strpos($endpoint, 'http') !== 0) {
             $endpoint = 'https://' . $endpoint;
         }
 
+        /** @var array{scheme: string, host: string} $url */
         $url = parse_url($endpoint);
         $domain = $url['host'];
         if (! ($this->options['bucket_endpoint'] ?? false)) {
             $domain = $this->bucket . '.' . $domain;
         }
 
-        $domain = "{$url['scheme']}://{$domain}";
+        $domain = sprintf('%s://%s', $url['scheme'], $domain);
 
         return rtrim($domain, '/') . '/';
     }
 
-    public function signUrl(string $path, $expiration, array $options = [], string $method = 'GET')
+    /**
+     * Get a signed URL for the file at the given path.
+     *
+     * @param \DateTimeInterface|int $expiration
+     * @param array<string, mixed> $options
+     */
+    public function signUrl(string $path, $expiration, array $options = [], string $method = 'GET'): string
     {
         $expires = $expiration instanceof DateTimeInterface ? $expiration->getTimestamp() - time() : $expiration;
 
@@ -567,11 +562,8 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * Get a temporary URL for the file at the given path.
      *
-     * @param string $path
      * @param \DateTimeInterface|int $expiration
-     * @param array $options
-     * @param string $method
-     * @return string
+     * @param array<string, mixed> $options
      */
     public function getTemporaryUrl(string $path, $expiration, array $options = [], string $method = 'GET'): string
     {
@@ -586,25 +578,18 @@ class ObsAdapter implements FilesystemAdapter
 
     /**
      * Concatenate a path to a URL.
-     *
-     * @param string $url
-     * @param string $path
-     * @return string
      */
     protected function concatPathToUrl(string $url, string $path): string
     {
-        return rtrim($url, '/').'/'.ltrim($path, '/');
+        return rtrim($url, '/') . '/' . ltrim($path, '/');
     }
 
     /**
      * Replace the scheme, host and port of the given UriInterface with values from the given URL.
-     *
-     * @param \Psr\Http\Message\UriInterface $uri
-     * @param string $url
-     * @return \Psr\Http\Message\UriInterface
      */
     protected function replaceBaseUrl(UriInterface $uri, string $url): UriInterface
     {
+        /** @var array{scheme: string, host: string, port?: int} $parsed */
         $parsed = parse_url($url);
 
         return $uri

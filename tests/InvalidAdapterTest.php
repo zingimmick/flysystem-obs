@@ -186,8 +186,9 @@ class InvalidAdapterTest extends TestCase
     public function testGetTemporaryUrlWithUrl(): void
     {
         $obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '', null, null, [
+            'endpoint' => 'https://obs.cdn.com',
             'temporary_url' => 'https://obs.cdn.com',
         ]);
-        self::assertStringStartsWith('https://obs.cdn.com/test', (string) $obsAdapter->getTemporaryUrl('test', 10));
+        self::assertStringStartsWith('https://obs.cdn.com/test', $obsAdapter->getTemporaryUrl('test', 10));
     }
 }
