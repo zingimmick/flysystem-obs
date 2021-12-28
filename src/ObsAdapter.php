@@ -125,6 +125,15 @@ class ObsAdapter implements FilesystemAdapter
     {
         return $this->getClient();
 }
+
+    /**
+     * @param string $bucket
+     */
+    public function setBucket(string $bucket): void
+    {
+        $this->bucket = $bucket;
+    }
+
     /**
      * @param resource $contents
      */
@@ -561,7 +570,7 @@ class ObsAdapter implements FilesystemAdapter
      * @param string $path
      * @param \DateTimeInterface|int $expiration
      * @param array $options
-     *
+     * @param string $method
      * @return string
      */
     public function getTemporaryUrl(string $path, $expiration, array $options = [], string $method = 'GET'): string
