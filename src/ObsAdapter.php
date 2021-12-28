@@ -540,6 +540,21 @@ class ObsAdapter implements FilesystemAdapter
         return rtrim($domain, '/') . '/';
     }
 
+    public function signUrl(string $path, $expiration, array $options = [], string $method = 'GET')
+    {
+        $expires = $expiration instanceof DateTimeInterface ? $expiration->getTimestamp() - time() : $expiration;
+
+        $model = $this->client->createSignedUrl([
+            'Method' => $method,
+            'Bucket' => $this->bucket,
+            'Key' => $this->pathPrefixer->prefixPath($path),
+            'Expires' => $expires,
+            'QueryParams' => $options,
+        ]);
+
+        return $model['SignedUrl'];
+    }
+
     /**
      * Get a temporary URL for the file at the given path.
      *
@@ -549,19 +564,9 @@ class ObsAdapter implements FilesystemAdapter
      *
      * @return string
      */
-    public function getTemporaryUrl(string $path,  $expiration, array $options = []): string
+    public function getTemporaryUrl(string $path, $expiration, array $options = [], string $method = 'GET'): string
     {
-        $expires = $expiration instanceof DateTimeInterface ? $expiration->getTimestamp() - time() : $expiration;
-
-        $model = $this->client->createSignedUrl([
-            'Method' => 'GET',
-            'Bucket' => $this->bucket,
-            'Key' => $this->pathPrefixer->prefixPath($path),
-            'Expires' => $expires,
-            'QueryParams' => $options,
-        ]);
-
-        $uri = new Uri($model['SignedUrl']);
+        $uri = new Uri($this->signUrl($path, $expiration, $options, $method));
 
         if (isset($this->options['temporary_url'])) {
             $uri = $this->replaceBaseUrl($uri, $this->options['temporary_url']);
