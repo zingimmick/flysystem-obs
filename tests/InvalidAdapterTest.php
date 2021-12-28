@@ -157,6 +157,7 @@ class InvalidAdapterTest extends TestCase
         ]);
         self::assertSame('test', $obsAdapter->getBucket());
     }
+
     public function testSetBucket(): void
     {
         $obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '', null, null, [
@@ -165,6 +166,7 @@ class InvalidAdapterTest extends TestCase
         $obsAdapter->setBucket('new-bucket');
         self::assertSame('new-bucket', $obsAdapter->getBucket());
     }
+
     public function testGetUrl(): void
     {
         $obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '', null, null, [
@@ -172,6 +174,7 @@ class InvalidAdapterTest extends TestCase
         ]);
         self::assertSame('http://test.obs.cdn.com/test', $obsAdapter->getUrl('test'));
     }
+
     public function testGetClient(): void
     {
         $obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '', null, null, [
