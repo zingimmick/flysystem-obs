@@ -57,7 +57,7 @@ class ObsAdapter implements FilesystemAdapter
     protected $bucket;
 
     /**
-     * @var array{url?: string, temporary_url?: string, endpoint?: string, bucket_endpoint?: bool}
+     * @var mixed[]|array<string, bool>|array<string, string>
      */
     protected $options = [];
 
@@ -518,9 +518,10 @@ class ObsAdapter implements FilesystemAdapter
 
     protected function normalizeHost(): string
     {
-        if (!isset($this->options['endpoint'])){
+        if (! isset($this->options['endpoint'])) {
             throw UnableToGetUrl::missingOption('endpoint');
         }
+
         $endpoint = $this->options['endpoint'];
         if (strpos($endpoint, 'http') !== 0) {
             $endpoint = 'https://' . $endpoint;

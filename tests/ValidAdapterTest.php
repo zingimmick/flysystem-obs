@@ -239,11 +239,8 @@ class ValidAdapterTest extends TestCase
         if ($contents === false) {
             self::markTestSkipped('Require image contents');
         }
-        $this->obsAdapter->write(
-            'fixture/image.png',
-            $contents,
-            new Config()
-        );
+
+        $this->obsAdapter->write('fixture/image.png', $contents, new Config());
         /** @var array{int, int} $info */
         $info = getimagesize($this->obsAdapter->getTemporaryUrl('fixture/image.png', 10, [
             'x-image-process' => 'image/crop,w_200,h_100',
