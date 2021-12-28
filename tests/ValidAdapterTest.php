@@ -224,4 +224,23 @@ class ValidAdapterTest extends TestCase
     {
         self::assertTrue($this->obsAdapter->fileExists('fixture/read.txt'));
     }
+
+    public function testGetTemporaryUrl(): void
+    {
+        self::assertSame('read-test', file_get_contents($this->obsAdapter->getTemporaryUrl('fixture/read.txt', 10, [])));
+    }
+
+    public function testImage(): void
+    {
+        $this->obsAdapter->write(
+            'fixture/image.png',
+            file_get_contents('https://via.placeholder.com/640x480.png'),
+            new Config()
+        );
+        $info = getimagesize($this->obsAdapter->getTemporaryUrl('fixture/image.png', 10, [
+            'x-image-process' => 'image/crop,w_200,h_100',
+        ]));
+        self::assertSame(200, $info[0]);
+        self::assertSame(100, $info[1]);
+    }
 }

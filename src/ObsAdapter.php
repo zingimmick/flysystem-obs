@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Zing\Flysystem\Obs;
 
+use DateTimeInterface;
+use GuzzleHttp\Psr7\Uri;
 use League\Flysystem\Config;
 use League\Flysystem\DirectoryAttributes;
 use League\Flysystem\FileAttributes;
@@ -24,6 +26,7 @@ use League\MimeTypeDetection\MimeTypeDetector;
 use Obs\ObsClient;
 use Obs\ObsException;
 use Psr\Http\Message\StreamInterface;
+use Psr\Http\Message\UriInterface;
 use Throwable;
 
 class ObsAdapter implements FilesystemAdapter
@@ -97,11 +100,31 @@ class ObsAdapter implements FilesystemAdapter
         $this->options = $options;
     }
 
+    /**
+     * @return string
+     */
+    public function getBucket(): string
+    {
+        return $this->bucket;
+    }
+
+    /**
+     * @return \Obs\ObsClient
+     */
+    public function getClient(): ObsClient
+    {
+        return $this->client;
+    }
+
     public function write(string $path, string $contents, Config $config): void
     {
         $this->upload($path, $contents, $config);
     }
 
+    public function kernel(): ObsClient
+    {
+        return $this->getClient();
+}
     /**
      * @param resource $contents
      */
@@ -479,5 +502,100 @@ class ObsAdapter implements FilesystemAdapter
         }
 
         return $options;
+    }
+
+    /**
+     * Get the URL for the file at the given path.
+     *
+     * @param string $path
+     *
+     * @throws \RuntimeException
+     *
+     * @return string
+     */
+    public function getUrl(string $path): string
+    {
+        if (isset($this->options['url'])) {
+            return $this->concatPathToUrl($this->options['url'], $this->pathPrefixer->prefixPath($path));
+        }
+
+        return $this->concatPathToUrl($this->normalizeHost(), $this->pathPrefixer->prefixPath($path));
+    }
+
+    protected function normalizeHost(): string
+    {
+        $endpoint = $this->options['endpoint'];
+        if (strpos($endpoint, 'http') !== 0) {
+            $endpoint = 'https://' . $endpoint;
+        }
+
+        $url = parse_url($endpoint);
+        $domain = $url['host'];
+        if (! ($this->options['bucket_endpoint'] ?? false)) {
+            $domain = $this->bucket . '.' . $domain;
+        }
+
+        $domain = "{$url['scheme']}://{$domain}";
+
+        return rtrim($domain, '/') . '/';
+    }
+
+    /**
+     * Get a temporary URL for the file at the given path.
+     *
+     * @param string $path
+     * @param \DateTimeInterface|int $expiration
+     * @param array $options
+     *
+     * @return string
+     */
+    public function getTemporaryUrl(string $path,  $expiration, array $options = []): string
+    {
+        $expires = $expiration instanceof DateTimeInterface ? $expiration->getTimestamp() - time() : $expiration;
+
+        $model = $this->client->createSignedUrl([
+            'Method' => 'GET',
+            'Bucket' => $this->bucket,
+            'Key' => $this->pathPrefixer->prefixPath($path),
+            'Expires' => $expires,
+            'QueryParams' => $options,
+        ]);
+
+        $uri = new Uri($model['SignedUrl']);
+
+        if (isset($this->options['temporary_url'])) {
+            $uri = $this->replaceBaseUrl($uri, $this->options['temporary_url']);
+        }
+
+        return (string) $uri;
+    }
+
+    /**
+     * Concatenate a path to a URL.
+     *
+     * @param string $url
+     * @param string $path
+     * @return string
+     */
+    protected function concatPathToUrl(string $url, string $path): string
+    {
+        return rtrim($url, '/').'/'.ltrim($path, '/');
+    }
+
+    /**
+     * Replace the scheme, host and port of the given UriInterface with values from the given URL.
+     *
+     * @param \Psr\Http\Message\UriInterface $uri
+     * @param string $url
+     * @return \Psr\Http\Message\UriInterface
+     */
+    protected function replaceBaseUrl(UriInterface $uri, string $url): UriInterface
+    {
+        $parsed = parse_url($url);
+
+        return $uri
+            ->withScheme($parsed['scheme'])
+            ->withHost($parsed['host'])
+            ->withPort($parsed['port'] ?? null);
     }
 }

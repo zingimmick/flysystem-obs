@@ -47,7 +47,7 @@ class InvalidAdapterTest extends TestCase
         parent::setUp();
 
         $this->obsClient = new ObsClient(self::CONFIG);
-        $this->obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['endpoint'], self::CONFIG['bucket']);
+        $this->obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '');
     }
 
     public function testCopy(): void
@@ -147,5 +147,47 @@ class InvalidAdapterTest extends TestCase
     public function testHas(): void
     {
         self::assertFalse($this->obsAdapter->fileExists('file.txt'));
+    }
+
+    public function testGetUrl(): void
+    {
+        $obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '', null, null, [
+            'endpoint' => 'http://obs.cdn.com',
+        ]);
+        self::assertSame('http://test.obs.cdn.com/test', $obsAdapter->getUrl('test'));
+    }
+
+    public function testGetUrlWithHttps(): void
+    {
+        $obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '', null, null, [
+            'endpoint' => 'https://obs.cdn.com',
+        ]);
+        self::assertSame('https://test.obs.cdn.com/test', $obsAdapter->getUrl('test'));
+    }
+
+    public function testGetUrlWithUrl(): void
+    {
+        $obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '', null, null, [
+            'endpoint' => 'https://obs.cdn.com',
+            'url' => 'https://obs.cdn.com',
+        ]);
+        self::assertSame('https://obs.cdn.com/test', $obsAdapter->getUrl('test'));
+    }
+
+    public function testGetUrlWithBucketEndpoint(): void
+    {
+        $obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '', null, null, [
+            'endpoint' => 'https://obs.cdn.com',
+            'bucket_endpoint' => true,
+        ]);
+        self::assertSame('https://obs.cdn.com/test', $obsAdapter->getUrl('test'));
+    }
+
+    public function testGetTemporaryUrlWithUrl(): void
+    {
+        $obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '', null, null, [
+            'temporary_url' => 'https://obs.cdn.com',
+        ]);
+        self::assertStringStartsWith('https://obs.cdn.com/test', (string) $obsAdapter->getTemporaryUrl('test', 10));
     }
 }

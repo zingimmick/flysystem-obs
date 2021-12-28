@@ -19,17 +19,26 @@ composer require zing/flysystem-obs
 ## Usage
 
 ```php
+
 use League\Flysystem\Filesystem;
-use Zing\Flysystem\Obs\ObsAdapter;
 use Obs\ObsClient;
+use Zing\Flysystem\Obs\ObsAdapter;
 
 $prefix = '';
 $config = [
-   'key' => 'aW52YWxpZC1rZXk=',
-   'secret' => 'aW52YWxpZC1zZWNyZXQ=',
-   'bucket' => 'test',
-   'endpoint' => 'obs.cn-east-3.myhuaweicloud.com',
+    'key' => 'aW52YWxpZC1rZXk=',
+    'secret' => 'aW52YWxpZC1zZWNyZXQ=',
+    'bucket' => 'test',
+    'endpoint' => 'obs.cn-east-3.myhuaweicloud.com',
 ];
+
+$config['options'] = [
+    'url' => '',
+    'endpoint' => $config['endpoint'], 
+    'bucket_endpoint' => '',
+    'temporary_url' => '',
+];
+
 $client = new ObsClient($config);
 $adapter = new ObsAdapter($client, $config['bucket'], $prefix, null, null, $config['options']);
 $flysystem = new Filesystem($adapter);

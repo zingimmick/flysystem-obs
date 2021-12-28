@@ -842,4 +842,19 @@ class MockAdapterTest extends TestCase
         $this->mockGetMetadata('fixture/read.txt');
         self::assertTrue($this->obsAdapter->fileExists('fixture/read.txt'));
     }
+    public function testGetTemporaryUrl(): void
+    {
+        $this->legacyMock->shouldReceive('createSignedUrl')
+            ->withArgs([[
+                'Method' => 'GET',
+                'Bucket' => 'test',
+                'Key' => 'fixture/read.txt',
+                'Expires' => 10,
+                'QueryParams' => [],
+            ],
+            ])->andReturn(new Model([
+                'SignedUrl' => 'signed-url',
+            ]));
+        self::assertSame('signed-url', $this->obsAdapter->getTemporaryUrl('fixture/read.txt', 10, []));
+    }
 }
