@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Zing\Flysystem\Obs;
 
+use DateTimeInterface;
+use GuzzleHttp\Psr7\Uri;
 use League\Flysystem\Config;
 use League\Flysystem\DirectoryAttributes;
 use League\Flysystem\FileAttributes;
@@ -24,6 +26,7 @@ use League\MimeTypeDetection\MimeTypeDetector;
 use Obs\ObsClient;
 use Obs\ObsException;
 use Psr\Http\Message\StreamInterface;
+use Psr\Http\Message\UriInterface;
 use Throwable;
 
 class ObsAdapter implements FilesystemAdapter
@@ -54,7 +57,8 @@ class ObsAdapter implements FilesystemAdapter
     protected $bucket;
 
     /**
-     * @var array<string,mixed>
+     * @var mixed[]|array<string, bool>|array<string, string>
+     * @phpstan-var array{url?: string, temporary_url?: string, endpoint?: string, bucket_endpoint?: bool}
      */
     protected $options = [];
 
@@ -79,7 +83,7 @@ class ObsAdapter implements FilesystemAdapter
     private $mimeTypeDetector;
 
     /**
-     * @param array<string,mixed> $options
+     * @param array{url?: string, temporary_url?: string, endpoint?: string, bucket_endpoint?: bool} $options
      */
     public function __construct(
         ObsClient $client,
@@ -97,9 +101,29 @@ class ObsAdapter implements FilesystemAdapter
         $this->options = $options;
     }
 
+    public function getBucket(): string
+    {
+        return $this->bucket;
+    }
+
+    public function getClient(): ObsClient
+    {
+        return $this->client;
+    }
+
     public function write(string $path, string $contents, Config $config): void
     {
         $this->upload($path, $contents, $config);
+    }
+
+    public function kernel(): ObsClient
+    {
+        return $this->getClient();
+    }
+
+    public function setBucket(string $bucket): void
+    {
+        $this->bucket = $bucket;
     }
 
     /**
@@ -479,5 +503,100 @@ class ObsAdapter implements FilesystemAdapter
         }
 
         return $options;
+    }
+
+    /**
+     * Get the URL for the file at the given path.
+     */
+    public function getUrl(string $path): string
+    {
+        if (isset($this->options['url'])) {
+            return $this->concatPathToUrl($this->options['url'], $this->pathPrefixer->prefixPath($path));
+        }
+
+        return $this->concatPathToUrl($this->normalizeHost(), $this->pathPrefixer->prefixPath($path));
+    }
+
+    protected function normalizeHost(): string
+    {
+        if (! isset($this->options['endpoint'])) {
+            throw UnableToGetUrl::missingOption('endpoint');
+        }
+
+        $endpoint = $this->options['endpoint'];
+        if (strpos($endpoint, 'http') !== 0) {
+            $endpoint = 'https://' . $endpoint;
+        }
+
+        /** @var array{scheme: string, host: string} $url */
+        $url = parse_url($endpoint);
+        $domain = $url['host'];
+        if (! ($this->options['bucket_endpoint'] ?? false)) {
+            $domain = $this->bucket . '.' . $domain;
+        }
+
+        $domain = sprintf('%s://%s', $url['scheme'], $domain);
+
+        return rtrim($domain, '/') . '/';
+    }
+
+    /**
+     * Get a signed URL for the file at the given path.
+     *
+     * @param \DateTimeInterface|int $expiration
+     * @param array<string, mixed> $options
+     */
+    public function signUrl(string $path, $expiration, array $options = [], string $method = 'GET'): string
+    {
+        $expires = $expiration instanceof DateTimeInterface ? $expiration->getTimestamp() - time() : $expiration;
+
+        $model = $this->client->createSignedUrl([
+            'Method' => $method,
+            'Bucket' => $this->bucket,
+            'Key' => $this->pathPrefixer->prefixPath($path),
+            'Expires' => $expires,
+            'QueryParams' => $options,
+        ]);
+
+        return $model['SignedUrl'];
+    }
+
+    /**
+     * Get a temporary URL for the file at the given path.
+     *
+     * @param \DateTimeInterface|int $expiration
+     * @param array<string, mixed> $options
+     */
+    public function getTemporaryUrl(string $path, $expiration, array $options = [], string $method = 'GET'): string
+    {
+        $uri = new Uri($this->signUrl($path, $expiration, $options, $method));
+
+        if (isset($this->options['temporary_url'])) {
+            $uri = $this->replaceBaseUrl($uri, $this->options['temporary_url']);
+        }
+
+        return (string) $uri;
+    }
+
+    /**
+     * Concatenate a path to a URL.
+     */
+    protected function concatPathToUrl(string $url, string $path): string
+    {
+        return rtrim($url, '/') . '/' . ltrim($path, '/');
+    }
+
+    /**
+     * Replace the scheme, host and port of the given UriInterface with values from the given URL.
+     */
+    protected function replaceBaseUrl(UriInterface $uri, string $url): UriInterface
+    {
+        /** @var array{scheme: string, host: string, port?: int} $parsed */
+        $parsed = parse_url($url);
+
+        return $uri
+            ->withScheme($parsed['scheme'])
+            ->withHost($parsed['host'])
+            ->withPort($parsed['port'] ?? null);
     }
 }
