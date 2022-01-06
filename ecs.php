@@ -2,9 +2,6 @@
 
 declare(strict_types=1);
 
-use PhpCsFixer\Fixer\ControlStructure\YodaStyleFixer;
-use PhpCsFixer\Fixer\PhpUnit\PhpUnitInternalClassFixer;
-use PhpCsFixer\Fixer\PhpUnit\PhpUnitTestClassRequiresCoversFixer;
 use PhpCsFixer\Fixer\ReturnNotation\ReturnAssignmentFixer;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symplify\EasyCodingStandard\ValueObject\Option;
@@ -18,9 +15,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $parameters = $containerConfigurator->parameters();
     $parameters->set(Option::PARALLEL, true);
     $parameters->set(Option::SKIP, [
-        YodaStyleFixer::class => null,
-        PhpUnitInternalClassFixer::class,
-        PhpUnitTestClassRequiresCoversFixer::class,
+        // bug
         ReturnAssignmentFixer::class,
     ]);
     $parameters->set(

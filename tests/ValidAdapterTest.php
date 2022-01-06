@@ -12,7 +12,10 @@ use League\Flysystem\Visibility;
 use Obs\ObsClient;
 use Zing\Flysystem\Obs\ObsAdapter;
 
-class ValidAdapterTest extends TestCase
+/**
+ * @internal
+ */
+final class ValidAdapterTest extends TestCase
 {
     /**
      * @var \Zing\Flysystem\Obs\ObsAdapter

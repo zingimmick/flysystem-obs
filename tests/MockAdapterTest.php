@@ -15,7 +15,10 @@ use Obs\ObsClient;
 use Obs\ObsException;
 use Zing\Flysystem\Obs\ObsAdapter;
 
-class MockAdapterTest extends TestCase
+/**
+ * @internal
+ */
+final class MockAdapterTest extends TestCase
 {
     /**
      * @var \Mockery\LegacyMockInterface
