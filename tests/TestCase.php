@@ -8,7 +8,7 @@ use GuzzleHttp\Psr7\Utils;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use function GuzzleHttp\Psr7\stream_for;
 
-class TestCase extends BaseTestCase
+abstract class TestCase extends BaseTestCase
 {
     /**
      * @param array{size?: int, metadata?: array<string, mixed>} $options

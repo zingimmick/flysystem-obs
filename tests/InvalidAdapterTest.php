@@ -19,7 +19,10 @@ use Obs\ObsException;
 use Zing\Flysystem\Obs\ObsAdapter;
 use Zing\Flysystem\Obs\UnableToGetUrl;
 
-class InvalidAdapterTest extends TestCase
+/**
+ * @internal
+ */
+final class InvalidAdapterTest extends TestCase
 {
     /**
      * @var array<string, string>
