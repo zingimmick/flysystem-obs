@@ -66,12 +66,13 @@ final class MockAdapterTest extends TestCase
         $this->mockPutObject('file.txt', 'write');
         $this->obsAdapter->write('file.txt', 'write', new Config());
         $this->legacyMock->shouldReceive('copyObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'copy.txt',
-                'CopySource' => 'test/file.txt',
-                'MetadataDirective' => 'COPY',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'copy.txt',
+                    'CopySource' => 'test/file.txt',
+                    'MetadataDirective' => 'COPY',
+                ],
             ])->andReturn(new Model());
         $this->obsAdapter->copy('file.txt', 'copy.txt', new Config());
         $this->mockGetObject('copy.txt', 'write');
@@ -81,10 +82,11 @@ final class MockAdapterTest extends TestCase
     private function mockGetObject(string $path, string $body): void
     {
         $this->legacyMock->shouldReceive('getObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => $path,
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => $path,
+                ],
             ])->andReturn(new Model([
                 'Body' => $this->streamFor($body),
             ]));
@@ -93,41 +95,45 @@ final class MockAdapterTest extends TestCase
     public function testCreateDir(): void
     {
         $this->legacyMock->shouldReceive('putObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'path/',
-                'Body' => null,
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'path/',
+                    'Body' => null,
+                ],
             ])->andReturn(new Model());
         $this->obsAdapter->createDirectory('path', new Config());
         $this->legacyMock->shouldReceive('listObjects')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Delimiter' => '/',
-                'Prefix' => 'path/',
-                'MaxKeys' => 1000,
-                'Marker' => '',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Delimiter' => '/',
+                    'Prefix' => 'path/',
+                    'MaxKeys' => 1000,
+                    'Marker' => '',
+                ],
             ])->andReturn(new Model([
                 'NextMarker' => '',
-                'Contents' => [[
-                    'Key' => 'path/',
-                    'LastModified' => '2021-05-31T06:52:31.942Z',
-                    'ETag' => 'd41d8cd98f00b204e9800998ecf8427e',
-                    'Size' => 0,
-                    'StorageClass' => 'STANDARD_IA',
-                    'Owner' => [
-                        'DisplayName' => 'zingimmick',
-                        'ID' => '0c85ae1126000f380f21c00e77706640',
+                'Contents' => [
+                    [
+                        'Key' => 'path/',
+                        'LastModified' => '2021-05-31T06:52:31.942Z',
+                        'ETag' => 'd41d8cd98f00b204e9800998ecf8427e',
+                        'Size' => 0,
+                        'StorageClass' => 'STANDARD_IA',
+                        'Owner' => [
+                            'DisplayName' => 'zingimmick',
+                            'ID' => '0c85ae1126000f380f21c00e77706640',
+                        ],
                     ],
-                ],
                 ],
             ]));
         $this->legacyMock->shouldReceive('getObjectMetadata')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'path/',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'path/',
+                ],
             ])->andReturn(new Model(
                 [
                     'ContentLength' => 0,
@@ -170,10 +176,11 @@ final class MockAdapterTest extends TestCase
         $this->mockPutObject('file.txt', 'write');
         $this->obsAdapter->write('file.txt', 'write', new Config());
         $this->legacyMock->shouldReceive('getObjectAcl')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'file.txt',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'file.txt',
+                ],
             ])
             ->andReturns(new Model([
                 'ContentLength' => '508',
@@ -185,17 +192,18 @@ final class MockAdapterTest extends TestCase
                     'DisplayName' => 'zingimmick',
                     'ID' => '0c85ae1126000f380f21c00e77706640',
                 ],
-                'Grants' => [[
-                    'Grantee' => [
-                        'DisplayName' => 'zingimmick',
-                        'ID' => '0c85ae1126000f380f21c00e77706640',
-                        'URI' => '',
-                        'Permission' => 'FULL_CONTROL',
+                'Grants' => [
+                    [
+                        'Grantee' => [
+                            'DisplayName' => 'zingimmick',
+                            'ID' => '0c85ae1126000f380f21c00e77706640',
+                            'URI' => '',
+                            'Permission' => 'FULL_CONTROL',
+                        ],
+                        'VersionId' => '',
+                        'HttpStatusCode' => 200,
+                        'Reason' => 'OK',
                     ],
-                    'VersionId' => '',
-                    'HttpStatusCode' => 200,
-                    'Reason' => 'OK',
-                ],
                 ],
             ]), new Model([
                 'ContentLength' => '700',
@@ -231,11 +239,12 @@ final class MockAdapterTest extends TestCase
             ]));
         self::assertSame(Visibility::PRIVATE, $this->obsAdapter->visibility('file.txt')->visibility());
         $this->legacyMock->shouldReceive('setObjectAcl')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'file.txt',
-                'ACL' => 'public-read',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'file.txt',
+                    'ACL' => 'public-read',
+                ],
             ])->andReturn(new Model([
                 'ContentLength' => '0',
                 'Date' => 'Mon, 31 May 2021 06:52:31 GMT',
@@ -257,41 +266,46 @@ final class MockAdapterTest extends TestCase
         $this->mockGetMetadata('from.txt');
         self::assertTrue($this->obsAdapter->fileExists('from.txt'));
         $this->legacyMock->shouldReceive('getObjectMetadata')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'to.txt',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'to.txt',
+                ],
             ])->andThrow(new ObsException());
         self::assertFalse($this->obsAdapter->fileExists('to.txt'));
         $this->legacyMock->shouldReceive('copyObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'to.txt',
-                'CopySource' => 'test/from.txt',
-                'MetadataDirective' => 'COPY',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'to.txt',
+                    'CopySource' => 'test/from.txt',
+                    'MetadataDirective' => 'COPY',
+                ],
             ])->andReturn(new Model());
         $this->legacyMock->shouldReceive('deleteObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'from.txt',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'from.txt',
+                ],
             ])->andReturn(new Model());
         $this->obsAdapter->move('from.txt', 'to.txt', new Config());
         $this->legacyMock->shouldReceive('getObjectMetadata')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'from.txt',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'from.txt',
+                ],
             ])->andThrow(new ObsException());
         self::assertFalse($this->obsAdapter->fileExists('from.txt'));
         $this->mockGetObject('to.txt', 'write');
         self::assertSame('write', $this->obsAdapter->read('to.txt'));
         $this->legacyMock->shouldReceive('deleteObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'to.txt',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'to.txt',
+                ],
             ])->andReturn(new Model());
         $this->obsAdapter->delete('to.txt');
     }
@@ -299,13 +313,14 @@ final class MockAdapterTest extends TestCase
     public function testDeleteDir(): void
     {
         $this->legacyMock->shouldReceive('listObjects')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Delimiter' => '/',
-                'Prefix' => 'path/',
-                'MaxKeys' => 1000,
-                'Marker' => '',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Delimiter' => '/',
+                    'Prefix' => 'path/',
+                    'MaxKeys' => 1000,
+                    'Marker' => '',
+                ],
             ])->andReturn(new Model([
                 'ContentLength' => '864',
                 'Date' => 'Mon, 31 May 2021 06:52:32 GMT',
@@ -315,27 +330,28 @@ final class MockAdapterTest extends TestCase
                 'IsTruncated' => false,
                 'Marker' => '',
                 'NextMarker' => '',
-                'Contents' => [[
-                    'Key' => 'path/',
-                    'LastModified' => '2021-05-31T06:52:31.942Z',
-                    'ETag' => '"d41d8cd98f00b204e9800998ecf8427e"',
-                    'Size' => 0,
-                    'StorageClass' => 'STANDARD_IA',
-                    'Owner' => [
-                        'DisplayName' => 'zingimmick',
-                        'ID' => '0c85ae1126000f380f21c00e77706640',
+                'Contents' => [
+                    [
+                        'Key' => 'path/',
+                        'LastModified' => '2021-05-31T06:52:31.942Z',
+                        'ETag' => '"d41d8cd98f00b204e9800998ecf8427e"',
+                        'Size' => 0,
+                        'StorageClass' => 'STANDARD_IA',
+                        'Owner' => [
+                            'DisplayName' => 'zingimmick',
+                            'ID' => '0c85ae1126000f380f21c00e77706640',
+                        ],
+                    ], [
+                        'Key' => 'path/file.txt',
+                        'LastModified' => '2021-05-31T06:52:32.001Z',
+                        'ETag' => '"098f6bcd4621d373cade4e832627b4f6"',
+                        'Size' => 4,
+                        'StorageClass' => 'STANDARD_IA',
+                        'Owner' => [
+                            'DisplayName' => 'zingimmick',
+                            'ID' => '0c85ae1126000f380f21c00e77706640',
+                        ],
                     ],
-                ], [
-                    'Key' => 'path/file.txt',
-                    'LastModified' => '2021-05-31T06:52:32.001Z',
-                    'ETag' => '"098f6bcd4621d373cade4e832627b4f6"',
-                    'Size' => 4,
-                    'StorageClass' => 'STANDARD_IA',
-                    'Owner' => [
-                        'DisplayName' => 'zingimmick',
-                        'ID' => '0c85ae1126000f380f21c00e77706640',
-                    ],
-                ],
                 ],
                 'Name' => 'test',
                 'Prefix' => 'path/',
@@ -349,22 +365,25 @@ final class MockAdapterTest extends TestCase
         $this->mockGetMetadata('path/');
         $this->mockGetMetadata('path/file.txt');
         $this->legacyMock->shouldReceive('getObjectMetadata')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'path',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'path',
+                ],
             ])->andThrow(new ObsException());
         $this->legacyMock->shouldReceive('deleteObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'path',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'path',
+                ],
             ])->andReturn(new Model());
         $this->legacyMock->shouldReceive('deleteObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'path/file.txt',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'path/file.txt',
+                ],
             ])->andReturn(new Model());
         $this->obsAdapter->deleteDirectory('path');
         self::assertTrue(true);
@@ -433,10 +452,11 @@ final class MockAdapterTest extends TestCase
         ]);
 
         $this->legacyMock->shouldReceive('getObjectAcl')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => $path,
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => $path,
+                ],
             ])
             ->andReturn($model);
     }
@@ -459,13 +479,14 @@ final class MockAdapterTest extends TestCase
     {
         $contents = $this->streamForResource('write');
         $this->legacyMock->shouldReceive('putObject')
-            ->withArgs([[
-                'ContentType' => 'text/plain',
-                'Expires' => 20,
-                'Bucket' => 'test',
-                'Key' => 'file.txt',
-                'Body' => $contents,
-            ],
+            ->withArgs([
+                [
+                    'ContentType' => 'text/plain',
+                    'Expires' => 20,
+                    'Bucket' => 'test',
+                    'Key' => 'file.txt',
+                    'Body' => $contents,
+                ],
             ])->andReturn(new Model());
         $this->obsAdapter->writeStream('file.txt', $contents, new Config([
             'Expires' => 20,
@@ -478,22 +499,24 @@ final class MockAdapterTest extends TestCase
     {
         $contents = $this->streamForResource('write');
         $this->legacyMock->shouldReceive('putObject')
-            ->withArgs([[
-                'ContentType' => 'image/png',
-                'Bucket' => 'test',
-                'Key' => 'file.txt',
-                'Body' => $contents,
-            ],
+            ->withArgs([
+                [
+                    'ContentType' => 'image/png',
+                    'Bucket' => 'test',
+                    'Key' => 'file.txt',
+                    'Body' => $contents,
+                ],
             ])->andReturn(new Model());
         $this->obsAdapter->writeStream('file.txt', $contents, new Config([
             'ContentType' => 'image/png',
         ]));
         $this->legacyMock->shouldReceive('getObjectMetadata')
             ->once()
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'file.txt',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'file.txt',
+                ],
             ])->andReturn(new Model([
                 'ContentLength' => 9,
                 'Date' => 'Mon, 31 May 2021 06:52:32 GMT',
@@ -532,17 +555,19 @@ final class MockAdapterTest extends TestCase
         $this->mockGetMetadata('file.txt');
         self::assertTrue($this->obsAdapter->fileExists('file.txt'));
         $this->legacyMock->shouldReceive('deleteObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'file.txt',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'file.txt',
+                ],
             ])->andReturn(new Model());
         $this->obsAdapter->delete('file.txt');
         $this->legacyMock->shouldReceive('getObjectMetadata')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'file.txt',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'file.txt',
+                ],
             ])->andThrow(new ObsException());
         self::assertFalse($this->obsAdapter->fileExists('file.txt'));
     }
@@ -571,10 +596,11 @@ final class MockAdapterTest extends TestCase
     public function testGetVisibility(): void
     {
         $this->legacyMock->shouldReceive('getObjectAcl')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'fixture/read.txt',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'fixture/read.txt',
+                ],
             ])
             ->andReturn(new Model([
                 'ContentLength' => '508',
@@ -586,17 +612,18 @@ final class MockAdapterTest extends TestCase
                     'DisplayName' => 'zingimmick',
                     'ID' => '0c85ae1126000f380f21c00e77706640',
                 ],
-                'Grants' => [[
-                    'Grantee' => [
-                        'DisplayName' => 'zingimmick',
-                        'ID' => '0c85ae1126000f380f21c00e77706640',
-                        'URI' => '',
-                        'Permission' => 'FULL_CONTROL',
+                'Grants' => [
+                    [
+                        'Grantee' => [
+                            'DisplayName' => 'zingimmick',
+                            'ID' => '0c85ae1126000f380f21c00e77706640',
+                            'URI' => '',
+                            'Permission' => 'FULL_CONTROL',
+                        ],
+                        'VersionId' => '',
+                        'HttpStatusCode' => 200,
+                        'Reason' => 'OK',
                     ],
-                    'VersionId' => '',
-                    'HttpStatusCode' => 200,
-                    'Reason' => 'OK',
-                ],
                 ],
             ]));
         self::assertSame(Visibility::PRIVATE, $this->obsAdapter->visibility('fixture/read.txt')['visibility']);
@@ -606,10 +633,11 @@ final class MockAdapterTest extends TestCase
     {
         $this->legacyMock->shouldReceive('getObjectMetadata')
             ->once()
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => $path,
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => $path,
+                ],
             ])->andReturn(new Model([
                 'ContentLength' => 9,
                 'Date' => 'Mon, 31 May 2021 06:52:32 GMT',
@@ -642,13 +670,14 @@ final class MockAdapterTest extends TestCase
     public function testListContents(): void
     {
         $this->legacyMock->shouldReceive('listObjects')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Delimiter' => '/',
-                'Prefix' => 'path/',
-                'MaxKeys' => 1000,
-                'Marker' => '',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Delimiter' => '/',
+                    'Prefix' => 'path/',
+                    'MaxKeys' => 1000,
+                    'Marker' => '',
+                ],
             ])->andReturn(
                 new Model([
                     'ContentLength' => '566',
@@ -659,17 +688,18 @@ final class MockAdapterTest extends TestCase
                     'IsTruncated' => false,
                     'Marker' => '',
                     'NextMarker' => '',
-                    'Contents' => [[
-                        'Key' => 'path/',
-                        'LastModified' => '2021-05-31T15:23:24.217Z',
-                        'ETag' => '"d41d8cd98f00b204e9800998ecf8427e"',
-                        'Size' => 0,
-                        'StorageClass' => 'STANDARD_IA',
-                        'Owner' => [
-                            'DisplayName' => 'zingimmick',
-                            'ID' => '0c85ae1126000f380f21c00e77706640',
+                    'Contents' => [
+                        [
+                            'Key' => 'path/',
+                            'LastModified' => '2021-05-31T15:23:24.217Z',
+                            'ETag' => '"d41d8cd98f00b204e9800998ecf8427e"',
+                            'Size' => 0,
+                            'StorageClass' => 'STANDARD_IA',
+                            'Owner' => [
+                                'DisplayName' => 'zingimmick',
+                                'ID' => '0c85ae1126000f380f21c00e77706640',
+                            ],
                         ],
-                    ],
                     ],
                     'Name' => 'test',
                     'Prefix' => 'path/',
@@ -682,10 +712,11 @@ final class MockAdapterTest extends TestCase
                 ])
             );
         $this->legacyMock->shouldReceive('getObjectMetadata')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'path/',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'path/',
+                ],
             ])->andReturn(new Model(
                 [
                     'ContentLength' => 0,
@@ -717,13 +748,14 @@ final class MockAdapterTest extends TestCase
             ));
         self::assertNotEmpty($this->obsAdapter->listContents('path', false));
         $this->legacyMock->shouldReceive('listObjects')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Delimiter' => '/',
-                'Prefix' => 'path1/',
-                'MaxKeys' => 1000,
-                'Marker' => '',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Delimiter' => '/',
+                    'Prefix' => 'path1/',
+                    'MaxKeys' => 1000,
+                    'Marker' => '',
+                ],
             ])->andReturn(new Model([
                 'NextMarker' => '',
                 'Contents' => [],
@@ -732,13 +764,14 @@ final class MockAdapterTest extends TestCase
         $this->mockPutObject('a/b/file.txt', 'test');
         $this->obsAdapter->write('a/b/file.txt', 'test', new Config());
         $this->legacyMock->shouldReceive('listObjects')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Delimiter' => '/',
-                'Prefix' => 'a/',
-                'MaxKeys' => 1000,
-                'Marker' => '',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Delimiter' => '/',
+                    'Prefix' => 'a/',
+                    'MaxKeys' => 1000,
+                    'Marker' => '',
+                ],
             ])->andReturn(new Model([
                 'ContentLength' => '333',
                 'Date' => 'Mon, 31 May 2021 15:23:25 GMT',
@@ -753,22 +786,24 @@ final class MockAdapterTest extends TestCase
                 'Prefix' => 'a/',
                 'Delimiter' => '/',
                 'MaxKeys' => 1000,
-                'CommonPrefixes' => [[
-                    'Prefix' => 'a/b/',
-                ],
+                'CommonPrefixes' => [
+                    [
+                        'Prefix' => 'a/b/',
+                    ],
                 ],
                 'Location' => 'cn-east-3',
                 'HttpStatusCode' => 200,
                 'Reason' => 'OK',
             ]));
         $this->legacyMock->shouldReceive('listObjects')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Delimiter' => '/',
-                'Prefix' => 'a/b/',
-                'MaxKeys' => 1000,
-                'Marker' => '',
-            ],
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Delimiter' => '/',
+                    'Prefix' => 'a/b/',
+                    'MaxKeys' => 1000,
+                    'Marker' => '',
+                ],
             ])->andReturn(new Model([
                 'ContentLength' => '333',
                 'Date' => 'Mon, 31 May 2021 15:23:25 GMT',
@@ -778,17 +813,18 @@ final class MockAdapterTest extends TestCase
                 'IsTruncated' => false,
                 'Marker' => '',
                 'NextMarker' => '',
-                'Contents' => [[
-                    'Key' => 'a/b/file.txt',
-                    'LastModified' => '2021-05-31T15:23:24.217Z',
-                    'ETag' => 'd41d8cd98f00b204e9800998ecf8427e',
-                    'Size' => 9,
-                    'StorageClass' => 'STANDARD_IA',
-                    'Owner' => [
-                        'DisplayName' => 'zingimmick',
-                        'ID' => '0c85ae1126000f380f21c00e77706640',
+                'Contents' => [
+                    [
+                        'Key' => 'a/b/file.txt',
+                        'LastModified' => '2021-05-31T15:23:24.217Z',
+                        'ETag' => 'd41d8cd98f00b204e9800998ecf8427e',
+                        'Size' => 9,
+                        'StorageClass' => 'STANDARD_IA',
+                        'Owner' => [
+                            'DisplayName' => 'zingimmick',
+                            'ID' => '0c85ae1126000f380f21c00e77706640',
+                        ],
                     ],
-                ],
                 ],
                 'Name' => 'test',
                 'Prefix' => 'a/b/',
@@ -849,13 +885,14 @@ final class MockAdapterTest extends TestCase
     public function testGetTemporaryUrl(): void
     {
         $this->legacyMock->shouldReceive('createSignedUrl')
-            ->withArgs([[
-                'Method' => 'GET',
-                'Bucket' => 'test',
-                'Key' => 'fixture/read.txt',
-                'Expires' => 10,
-                'QueryParams' => [],
-            ],
+            ->withArgs([
+                [
+                    'Method' => 'GET',
+                    'Bucket' => 'test',
+                    'Key' => 'fixture/read.txt',
+                    'Expires' => 10,
+                    'QueryParams' => [],
+                ],
             ])->andReturn(new Model([
                 'SignedUrl' => 'signed-url',
             ]));
