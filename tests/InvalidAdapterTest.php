@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Zing\Flysystem\Obs\Tests;
 
 use League\Flysystem\Config;
+use League\Flysystem\UnableToCheckDirectoryExistence;
 use League\Flysystem\UnableToCopyFile;
 use League\Flysystem\UnableToCreateDirectory;
 use League\Flysystem\UnableToDeleteFile;
@@ -228,5 +229,11 @@ final class InvalidAdapterTest extends TestCase
             'temporary_url' => 'https://obs.cdn.com',
         ]);
         self::assertStringStartsWith('https://obs.cdn.com/test', $obsAdapter->getTemporaryUrl('test', 10));
+    }
+
+    public function testDirectoryExists(): void
+    {
+        $this->expectException(UnableToCheckDirectoryExistence::class);
+        $this->obsAdapter->directoryExists('path');
     }
 }
