@@ -13,6 +13,7 @@ use League\Flysystem\FilesystemAdapter;
 use League\Flysystem\FilesystemOperationFailed;
 use League\Flysystem\PathPrefixer;
 use League\Flysystem\StorageAttributes;
+use League\Flysystem\UnableToCheckDirectoryExistence;
 use League\Flysystem\UnableToCopyFile;
 use League\Flysystem\UnableToCreateDirectory;
 use League\Flysystem\UnableToDeleteFile;
@@ -215,6 +216,9 @@ class ObsAdapter implements FilesystemAdapter
     public function createDirectory(string $path, Config $config): void
     {
         try {
+            $config = $config->withDefaults([
+                'visibility' => $this->visibilityConverter->defaultForDirectories(),
+            ]);
             $this->write(trim($path, '/') . '/', '', $config);
         } catch (FilesystemOperationFailed $exception) {
             throw UnableToCreateDirectory::dueToFailure($path, $exception);
@@ -261,6 +265,23 @@ class ObsAdapter implements FilesystemAdapter
         }
 
         return true;
+    }
+
+    public function directoryExists(string $path): bool
+    {
+        try {
+            $prefix = $this->pathPrefixer->prefixDirectoryPath($path);
+            $options = [
+                'Bucket' => $this->bucket,
+                'Prefix' => $prefix,
+                'Delimiter' => '/',
+            ];
+            $model = $this->client->listObjects($options);
+
+            return $model['Contents'] !== [];
+        } catch (Throwable $exception) {
+            throw UnableToCheckDirectoryExistence::forLocation($path, $exception);
+        }
     }
 
     public function read(string $path): string

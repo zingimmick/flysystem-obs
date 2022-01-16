@@ -97,6 +97,7 @@ final class MockAdapterTest extends TestCase
         $this->legacyMock->shouldReceive('putObject')
             ->withArgs([
                 [
+                    'ACL' => 'public-read',
                     'Bucket' => 'test',
                     'Key' => 'path/',
                     'Body' => null,
@@ -897,5 +898,79 @@ final class MockAdapterTest extends TestCase
                 'SignedUrl' => 'signed-url',
             ]));
         self::assertSame('signed-url', $this->obsAdapter->getTemporaryUrl('fixture/read.txt', 10, []));
+    }
+
+    public function testDirectoryExists(): void
+    {
+        $this->legacyMock->shouldReceive('listObjects')
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Prefix' => 'fixture/exists-directory/',
+                    'Delimiter' => '/',
+                ],
+            ])->andReturn(new Model([
+                'ContentLength' => '302',
+                'Date' => 'Sun, 16 Jan 2022 09:26:08 GMT',
+                'RequestId' => '0000017E6235507D950E8EB369D41D99',
+                'Id2' => '32AAAQAAEAABAAAQAAEAABAAAQAAEAABCSZadwpdiOENxOcC8idIIBfPBMDPTNFd',
+                'Reserved' => '',
+                'IsTruncated' => false,
+                'Marker' => '',
+                'NextMarker' => '',
+                'Contents' => [],
+                'Name' => 'zing-test',
+                'Prefix' => 'fixture/exists-directory/',
+                'Delimiter' => '/',
+                'MaxKeys' => 1000,
+                'CommonPrefixes' => [],
+                'Location' => 'cn-east-3',
+                'HttpStatusCode' => 200,
+                'Reason' => 'OK',
+            ]), new Model([
+                'ContentLength' => '302',
+                'Date' => 'Sun, 16 Jan 2022 09:26:08 GMT',
+                'RequestId' => '0000017E6235507D950E8EB369D41D99',
+                'Id2' => '32AAAQAAEAABAAAQAAEAABAAAQAAEAABCSZadwpdiOENxOcC8idIIBfPBMDPTNFd',
+                'Reserved' => '',
+                'IsTruncated' => false,
+                'Marker' => '',
+                'NextMarker' => '',
+                'Contents' => [
+                    [
+                        'Key' => 'fixture/exists-directory/',
+                        'LastModified' => '2022-01-16T09:29:18.390Z',
+                        'ETag' => 'd41d8cd98f00b204e9800998ecf8427e',
+                        'Size' => 0,
+                        'StorageClass' => 'WARM',
+                        'Type' => '',
+                        'Owner' => [
+                            [
+                                'ID' => '0c85ae1126000f380f21c00e77706640',
+                            ],
+                        ],
+                    ],
+                ],
+                'Name' => 'zing-test',
+                'Prefix' => 'fixture/exists-directory/',
+                'Delimiter' => '/',
+                'MaxKeys' => 1000,
+                'CommonPrefixes' => [],
+                'Location' => 'cn-east-3',
+                'HttpStatusCode' => 200,
+                'Reason' => 'OK',
+            ]));
+        $this->legacyMock->shouldReceive('putObject')
+            ->withArgs([
+                [
+                    'ACL' => 'public-read',
+                    'Bucket' => 'test',
+                    'Key' => 'fixture/exists-directory/',
+                    'Body' => null,
+                ],
+            ])->andReturn(new Model());
+        $this->assertFalse($this->obsAdapter->directoryExists('fixture/exists-directory'));
+        $this->obsAdapter->createDirectory('fixture/exists-directory', new Config());
+        $this->assertTrue($this->obsAdapter->directoryExists('fixture/exists-directory'));
     }
 }
