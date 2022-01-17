@@ -8,6 +8,8 @@ use League\Flysystem\Config;
 use League\Flysystem\DirectoryAttributes;
 use League\Flysystem\FileAttributes;
 use League\Flysystem\StorageAttributes;
+use League\Flysystem\UnableToCopyFile;
+use League\Flysystem\UnableToRetrieveMetadata;
 use League\Flysystem\Visibility;
 use Mockery;
 use Obs\Internal\Common\Model;
@@ -71,14 +73,33 @@ final class MockAdapterTest extends TestCase
                     'Bucket' => 'test',
                     'Key' => 'copy.txt',
                     'CopySource' => 'test/file.txt',
-                    'MetadataDirective' => 'COPY',
+                    'MetadataDirective' => 'COPY', 'ACL' => 'public-read'
                 ],
             ])->andReturn(new Model());
+        $this->mockGetVisibility('file.txt',Visibility::PUBLIC);
         $this->obsAdapter->copy('file.txt', 'copy.txt', new Config());
         $this->mockGetObject('copy.txt', 'write');
         self::assertSame('write', $this->obsAdapter->read('copy.txt'));
     }
 
+    public function testCopyFailed(): void
+    {
+        $this->mockPutObject('file.txt', 'write');
+        $this->obsAdapter->write('file.txt', 'write', new Config());
+        $this->legacyMock->shouldReceive('copyObject')
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'copy.txt',
+                    'CopySource' => 'test/file.txt',
+                    'MetadataDirective' => 'COPY', 'ACL' => 'public-read'
+                ],
+            ])->andThrow(new ObsException());
+        $this->mockGetVisibility('file.txt',Visibility::PUBLIC);
+        $this->expectException(UnableToCopyFile::class); $this->obsAdapter->copy('file.txt', 'copy.txt', new Config());
+        $this->mockGetObject('copy.txt', 'write');
+        self::assertSame('write', $this->obsAdapter->read('copy.txt'));
+    }
     private function mockGetObject(string $path, string $body): void
     {
         $this->legacyMock->shouldReceive('getObject')
@@ -281,6 +302,7 @@ final class MockAdapterTest extends TestCase
                     'Key' => 'to.txt',
                     'CopySource' => 'test/from.txt',
                     'MetadataDirective' => 'COPY',
+                    'ACL'=>'public-read'
                 ],
             ])->andReturn(new Model());
         $this->legacyMock->shouldReceive('deleteObject')
@@ -290,6 +312,7 @@ final class MockAdapterTest extends TestCase
                     'Key' => 'from.txt',
                 ],
             ])->andReturn(new Model());
+        $this->mockGetVisibility('from.txt',Visibility::PUBLIC);
         $this->obsAdapter->move('from.txt', 'to.txt', new Config());
         $this->legacyMock->shouldReceive('getObjectMetadata')
             ->withArgs([
@@ -317,7 +340,6 @@ final class MockAdapterTest extends TestCase
             ->withArgs([
                 [
                     'Bucket' => 'test',
-                    'Delimiter' => '/',
                     'Prefix' => 'path/',
                     'MaxKeys' => 1000,
                     'Marker' => '',
@@ -376,7 +398,7 @@ final class MockAdapterTest extends TestCase
             ->withArgs([
                 [
                     'Bucket' => 'test',
-                    'Key' => 'path',
+                    'Key' => 'path/',
                 ],
             ])->andReturn(new Model());
         $this->legacyMock->shouldReceive('deleteObject')
@@ -668,6 +690,43 @@ final class MockAdapterTest extends TestCase
             ]));
     }
 
+    private function mockGetEmptyMetadata(string $path): void
+    {
+        $this->legacyMock->shouldReceive('getObjectMetadata')
+            ->once()
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => $path,
+                ],
+            ])->andReturn(new Model([
+                'ContentLength' => null,
+                'Date' => 'Mon, 31 May 2021 06:52:32 GMT',
+                'RequestId' => '00000179C13207FD9217A8324EE5B315',
+                'Id2' => '32AAAQAAEAABAAAQAAEAABAAAQAAEAABCSOcy2Ri+ilXxrwc5JIVg6ifOFbyOU/p',
+                'Reserved' => 'amazon, aws and amazon web services are trademarks or registered trademarks of Amazon Technologies, Inc',
+                'Expiration' => '',
+                'LastModified' => null,
+                'ContentType' => null,
+                'ETag' => '"098f6bcd4621d373cade4e832627b4f6"',
+                'VersionId' => '',
+                'WebsiteRedirectLocation' => '',
+                'StorageClass' => 'STANDARD_IA',
+                'AllowOrigin' => '',
+                'MaxAgeSeconds' => '',
+                'ExposeHeader' => '',
+                'AllowMethod' => '',
+                'AllowHeader' => '',
+                'Restore' => '',
+                'SseKms' => '',
+                'SseKmsKey' => '',
+                'SseC' => '',
+                'SseCKeyMd5' => '',
+                'Metadata' => [],
+                'HttpStatusCode' => 200,
+                'Reason' => 'OK',
+            ]));
+    }
     public function testListContents(): void
     {
         $this->legacyMock->shouldReceive('listObjects')
@@ -768,7 +827,6 @@ final class MockAdapterTest extends TestCase
             ->withArgs([
                 [
                     'Bucket' => 'test',
-                    'Delimiter' => '/',
                     'Prefix' => 'a/',
                     'MaxKeys' => 1000,
                     'Marker' => '',
@@ -800,7 +858,6 @@ final class MockAdapterTest extends TestCase
             ->withArgs([
                 [
                     'Bucket' => 'test',
-                    'Delimiter' => '/',
                     'Prefix' => 'a/b/',
                     'MaxKeys' => 1000,
                     'Marker' => '',
@@ -856,12 +913,19 @@ final class MockAdapterTest extends TestCase
         /** @var \League\Flysystem\DirectoryAttributes $directory */
         $directory = $contents[1];
         self::assertInstanceOf(DirectoryAttributes::class, $directory);
-        self::assertSame('a/b/', $directory->path());
+        self::assertSame('a/b', $directory->path());
     }
 
     public function testGetSize(): void
     {
         $this->mockGetMetadata('fixture/read.txt');
+        self::assertSame(9, $this->obsAdapter->fileSize('fixture/read.txt')->fileSize());
+    }
+
+    public function testGetSizeError(): void
+    {
+        $this->mockGetEmptyMetadata('fixture/read.txt');
+        $this->expectException(UnableToRetrieveMetadata::class);
         self::assertSame(9, $this->obsAdapter->fileSize('fixture/read.txt')->fileSize());
     }
 
@@ -871,10 +935,32 @@ final class MockAdapterTest extends TestCase
         self::assertSame(1622443952, $this->obsAdapter->lastModified('fixture/read.txt')->lastModified());
     }
 
+
+    public function testGetTimestampError(): void
+    {
+        $this->mockGetEmptyMetadata('fixture/read.txt');
+        $this->expectException(UnableToRetrieveMetadata::class);
+        self::assertSame(1622443952, $this->obsAdapter->lastModified('fixture/read.txt')->lastModified());
+    }
+
     public function testGetMimetype(): void
     {
         $this->mockGetMetadata('fixture/read.txt');
         self::assertSame('text/plain', $this->obsAdapter->mimeType('fixture/read.txt')->mimeType());
+    }
+
+    public function testGetMimetypeError(): void
+    {
+        $this->mockGetEmptyMetadata('fixture/read.txt');
+        $this->expectException(UnableToRetrieveMetadata::class);
+        self::assertSame('text/plain', $this->obsAdapter->mimeType('fixture/read.txt')->mimeType());
+    }
+
+    public function testGetMetadataError(): void
+    {
+        $this->mockGetEmptyMetadata('fixture/');
+        $this->expectException(UnableToRetrieveMetadata::class);
+        self::assertSame('text/plain', $this->obsAdapter->mimeType('fixture/')->mimeType());
     }
 
     public function testHas(): void

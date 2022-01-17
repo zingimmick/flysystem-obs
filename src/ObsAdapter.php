@@ -182,11 +182,22 @@ class ObsAdapter implements FilesystemAdapter
     public function copy(string $source, string $destination, Config $config): void
     {
         try {
+            /** @var string $visibility */
+            $visibility = $this->visibility($source)->visibility();
+        } catch (Throwable $exception) {
+            throw UnableToCopyFile::fromLocationTo(
+                $source,
+                $destination,
+                $exception
+            );
+        }
+        try {
             $this->client->copyObject(array_merge($this->createOptionsFromConfig($config), [
                 'Bucket' => $this->bucket,
                 'Key' => $this->pathPrefixer->prefixPath($destination),
                 'CopySource' => $this->bucket . '/' . $this->pathPrefixer->prefixPath($source),
                 'MetadataDirective' => ObsClient::CopyMetadata,
+                'ACL'=>$this->visibilityConverter->visibilityToAcl($visibility)
             ]));
         } catch (ObsException $exception) {
             throw UnableToCopyFile::fromLocationTo($source, $destination, $exception);
@@ -209,7 +220,7 @@ class ObsAdapter implements FilesystemAdapter
     {
         $files = $this->listContents($path, true);
         foreach ($files as $file) {
-            $this->delete($file['path']);
+            $this->delete($file->isFile()?$file->path():$file->path().'/');
         }
     }
 
@@ -315,7 +326,7 @@ class ObsAdapter implements FilesystemAdapter
         }
 
         foreach ($result['prefix'] as $dir) {
-            yield new DirectoryAttributes($dir);
+            yield new DirectoryAttributes(rtrim($dir,'/'));
         }
     }
 
@@ -359,7 +370,7 @@ class ObsAdapter implements FilesystemAdapter
             $path,
             $metadata['ContentLength'] ?? $metadata['Size'] ?? null,
             null,
-            strtotime($metadata['LastModified']) ?: null,
+            isset($metadata['LastModified'])?strtotime($metadata['LastModified']) : null,
             $metadata['ContentType'] ?? null,
             $this->extractExtraMetadata($metadata)
         );
@@ -385,17 +396,29 @@ class ObsAdapter implements FilesystemAdapter
 
     public function fileSize(string $path): FileAttributes
     {
-        return $this->getMetadata($path, FileAttributes::ATTRIBUTE_FILE_SIZE);
+        $attributes=  $this->getMetadata($path, FileAttributes::ATTRIBUTE_FILE_SIZE);
+        if ($attributes->fileSize() === null) {
+            throw UnableToRetrieveMetadata::fileSize($path);
+        }
+        return  $attributes;
     }
 
     public function mimeType(string $path): FileAttributes
     {
-        return $this->getMetadata($path, FileAttributes::ATTRIBUTE_MIME_TYPE);
+        $attributes=  $this->getMetadata($path, FileAttributes::ATTRIBUTE_MIME_TYPE);
+        if ($attributes->mimeType() === null) {
+            throw UnableToRetrieveMetadata::mimeType($path);
+        }
+        return  $attributes;
     }
 
     public function lastModified(string $path): FileAttributes
     {
-        return $this->getMetadata($path, FileAttributes::ATTRIBUTE_LAST_MODIFIED);
+        $attributes= $this->getMetadata($path, FileAttributes::ATTRIBUTE_LAST_MODIFIED);
+        if ($attributes->lastModified() === null) {
+            throw UnableToRetrieveMetadata::lastModified($path);
+        }
+return  $attributes;
     }
 
     /**
@@ -422,18 +445,24 @@ class ObsAdapter implements FilesystemAdapter
      */
     public function listDirObjects(string $dirname = '', bool $recursive = false): array
     {
+        $prefix = trim($this->pathPrefixer->prefixPath($dirname), '/');
+        $prefix = empty($prefix) ? '' : $prefix . '/';
         $nextMarker = '';
 
         $result = [];
 
         while (true) {
-            $model = $this->client->listObjects([
+            $options=[
                 'Bucket' => $this->bucket,
-                'Delimiter' => self::DELIMITER,
-                'Prefix' => $dirname,
+                'Prefix' => $prefix,
                 'MaxKeys' => self::MAX_KEYS,
                 'Marker' => $nextMarker,
-            ]);
+            ];
+            if ($recursive===false){
+                         $options[  'Delimiter']      = self::DELIMITER;
+
+            }
+            $model = $this->client->listObjects($options);
 
             $nextMarker = $model['NextMarker'];
             $objects = $model['Contents'];
