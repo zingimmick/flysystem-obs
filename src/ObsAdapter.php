@@ -182,7 +182,6 @@ class ObsAdapter implements FilesystemAdapter
     public function copy(string $source, string $destination, Config $config): void
     {
         try {
-            /** @var string $visibility */
             $visibility = $this->visibility($source)
                 ->visibility();
         } catch (Throwable $exception) {
