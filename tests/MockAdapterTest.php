@@ -73,10 +73,11 @@ final class MockAdapterTest extends TestCase
                     'Bucket' => 'test',
                     'Key' => 'copy.txt',
                     'CopySource' => 'test/file.txt',
-                    'MetadataDirective' => 'COPY', 'ACL' => 'public-read'
+                    'MetadataDirective' => 'COPY',
+                    'ACL' => 'public-read',
                 ],
             ])->andReturn(new Model());
-        $this->mockGetVisibility('file.txt',Visibility::PUBLIC);
+        $this->mockGetVisibility('file.txt', Visibility::PUBLIC);
         $this->obsAdapter->copy('file.txt', 'copy.txt', new Config());
         $this->mockGetObject('copy.txt', 'write');
         self::assertSame('write', $this->obsAdapter->read('copy.txt'));
@@ -92,14 +93,17 @@ final class MockAdapterTest extends TestCase
                     'Bucket' => 'test',
                     'Key' => 'copy.txt',
                     'CopySource' => 'test/file.txt',
-                    'MetadataDirective' => 'COPY', 'ACL' => 'public-read'
+                    'MetadataDirective' => 'COPY',
+                    'ACL' => 'public-read',
                 ],
             ])->andThrow(new ObsException());
-        $this->mockGetVisibility('file.txt',Visibility::PUBLIC);
-        $this->expectException(UnableToCopyFile::class); $this->obsAdapter->copy('file.txt', 'copy.txt', new Config());
+        $this->mockGetVisibility('file.txt', Visibility::PUBLIC);
+        $this->expectException(UnableToCopyFile::class);
+        $this->obsAdapter->copy('file.txt', 'copy.txt', new Config());
         $this->mockGetObject('copy.txt', 'write');
         self::assertSame('write', $this->obsAdapter->read('copy.txt'));
     }
+
     private function mockGetObject(string $path, string $body): void
     {
         $this->legacyMock->shouldReceive('getObject')
@@ -302,7 +306,7 @@ final class MockAdapterTest extends TestCase
                     'Key' => 'to.txt',
                     'CopySource' => 'test/from.txt',
                     'MetadataDirective' => 'COPY',
-                    'ACL'=>'public-read'
+                    'ACL' => 'public-read',
                 ],
             ])->andReturn(new Model());
         $this->legacyMock->shouldReceive('deleteObject')
@@ -312,7 +316,7 @@ final class MockAdapterTest extends TestCase
                     'Key' => 'from.txt',
                 ],
             ])->andReturn(new Model());
-        $this->mockGetVisibility('from.txt',Visibility::PUBLIC);
+        $this->mockGetVisibility('from.txt', Visibility::PUBLIC);
         $this->obsAdapter->move('from.txt', 'to.txt', new Config());
         $this->legacyMock->shouldReceive('getObjectMetadata')
             ->withArgs([
@@ -727,6 +731,7 @@ final class MockAdapterTest extends TestCase
                 'Reason' => 'OK',
             ]));
     }
+
     public function testListContents(): void
     {
         $this->legacyMock->shouldReceive('listObjects')
@@ -840,7 +845,19 @@ final class MockAdapterTest extends TestCase
                 'IsTruncated' => false,
                 'Marker' => '',
                 'NextMarker' => '',
-                'Contents' => [],
+                'Contents' => [
+                    [
+                        'Key' => 'a/b/file.txt',
+                        'LastModified' => '2021-05-31T15:23:24.217Z',
+                        'ETag' => 'd41d8cd98f00b204e9800998ecf8427e',
+                        'Size' => 9,
+                        'StorageClass' => 'STANDARD_IA',
+                        'Owner' => [
+                            'DisplayName' => 'zingimmick',
+                            'ID' => '0c85ae1126000f380f21c00e77706640',
+                        ],
+                    ],
+                ],
                 'Name' => 'test',
                 'Prefix' => 'a/',
                 'Delimiter' => '/',
@@ -934,7 +951,6 @@ final class MockAdapterTest extends TestCase
         $this->mockGetMetadata('fixture/read.txt');
         self::assertSame(1622443952, $this->obsAdapter->lastModified('fixture/read.txt')->lastModified());
     }
-
 
     public function testGetTimestampError(): void
     {

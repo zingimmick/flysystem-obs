@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace Zing\Flysystem\Obs\Tests;
 
-use GuzzleHttp\Psr7\Utils;
 use League\Flysystem\AdapterTestUtilities\FilesystemAdapterTestCase;
 use League\Flysystem\Config;
 use League\Flysystem\FilesystemAdapter;
-use League\Flysystem\StorageAttributes;
-use League\Flysystem\Visibility;
 use Obs\ObsClient;
 use Zing\Flysystem\Obs\ObsAdapter;
 
@@ -18,8 +15,6 @@ use Zing\Flysystem\Obs\ObsAdapter;
  */
 final class AdapterTest extends FilesystemAdapterTestCase
 {
-
-
     protected static function createFilesystemAdapter(): FilesystemAdapter
     {
         $config = [
@@ -41,10 +36,7 @@ final class AdapterTest extends FilesystemAdapterTestCase
         }
 
         parent::setUp();
-
-
     }
-
 
     protected function tearDown(): void
     {
@@ -52,29 +44,24 @@ final class AdapterTest extends FilesystemAdapterTestCase
 
         $adapter = $this->adapter();
         $adapter->deleteDirectory('/');
-        /** @var StorageAttributes[] $listing */
+        /** @var \League\Flysystem\StorageAttributes[] $listing */
         $listing = $adapter->listContents('', false);
-        foreach ($listing as $item) {
-            if ($item->isFile()) {
-                $adapter->delete($item->path());
+        foreach ($listing as $singleListing) {
+            if ($singleListing->isFile()) {
+                $adapter->delete($singleListing->path());
             } else {
-                $adapter->deleteDirectory($item->path());
+                $adapter->deleteDirectory($singleListing->path());
             }
         }
-
-        self::$adapter = null;
     }
 
-    /**
-     * @test
-     */
-    public function fetching_unknown_mime_type_of_a_file(): void
+    public function testFetchingUnknownMimeTypeOfAFile(): void
     {
-        $this->adapter()->write('unknown-mime-type.md5', '', new Config());
+        $this->adapter()
+            ->write('unknown-mime-type.md5', '', new Config());
 
-
-        $this->runScenario(function () {
-            self::assertEquals('binary/octet-stream', $this->adapter()->mimeType('unknown-mime-type.md5')->mimeType());
+        $this->runScenario(function (): void {
+            self::assertSame('binary/octet-stream', $this->adapter()->mimeType('unknown-mime-type.md5')->mimeType());
         });
     }
 }

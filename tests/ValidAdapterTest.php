@@ -195,15 +195,15 @@ final class ValidAdapterTest extends TestCase
     {
         self::assertNotEmpty(iterator_to_array($this->obsAdapter->listContents('fixture', false)));
         self::assertEmpty(iterator_to_array($this->obsAdapter->listContents('path1', false)));
-        $this->obsAdapter->createDirectory('fixture/path/dir',new Config());
+        $this->obsAdapter->createDirectory('fixture/path/dir', new Config());
         $this->obsAdapter->write('fixture/path/dir/file.txt', 'test', new Config());
-        /** @var StorageAttributes[] $contents */
+        /** @var \League\Flysystem\StorageAttributes[] $contents */
         $contents = iterator_to_array($this->obsAdapter->listContents('fixture/path', true));
         self::assertContainsOnlyInstancesOf(StorageAttributes::class, $contents);
         self::assertCount(2, $contents);
         /** @var \League\Flysystem\FileAttributes $file */
         /** @var \League\Flysystem\DirectoryAttributes $directory */
-        [$file,$directory]=$contents[0]->isFile()?[$contents[0],$contents[1]]:[$contents[1],$contents[0]];
+        [$file,$directory] = $contents[0]->isFile() ? [$contents[0], $contents[1]] : [$contents[1], $contents[0]];
         self::assertInstanceOf(FileAttributes::class, $file);
         self::assertSame('fixture/path/dir/file.txt', $file->path());
         self::assertSame(4, $file->fileSize());

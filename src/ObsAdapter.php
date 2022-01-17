@@ -183,21 +183,19 @@ class ObsAdapter implements FilesystemAdapter
     {
         try {
             /** @var string $visibility */
-            $visibility = $this->visibility($source)->visibility();
+            $visibility = $this->visibility($source)
+                ->visibility();
         } catch (Throwable $exception) {
-            throw UnableToCopyFile::fromLocationTo(
-                $source,
-                $destination,
-                $exception
-            );
+            throw UnableToCopyFile::fromLocationTo($source, $destination, $exception);
         }
+
         try {
             $this->client->copyObject(array_merge($this->createOptionsFromConfig($config), [
                 'Bucket' => $this->bucket,
                 'Key' => $this->pathPrefixer->prefixPath($destination),
                 'CopySource' => $this->bucket . '/' . $this->pathPrefixer->prefixPath($source),
                 'MetadataDirective' => ObsClient::CopyMetadata,
-                'ACL'=>$this->visibilityConverter->visibilityToAcl($visibility)
+                'ACL' => $this->visibilityConverter->visibilityToAcl($visibility),
             ]));
         } catch (ObsException $exception) {
             throw UnableToCopyFile::fromLocationTo($source, $destination, $exception);
@@ -220,7 +218,7 @@ class ObsAdapter implements FilesystemAdapter
     {
         $files = $this->listContents($path, true);
         foreach ($files as $file) {
-            $this->delete($file->isFile()?$file->path():$file->path().'/');
+            $this->delete($file->isFile() ? $file->path() : $file->path() . '/');
         }
     }
 
@@ -326,7 +324,7 @@ class ObsAdapter implements FilesystemAdapter
         }
 
         foreach ($result['prefix'] as $dir) {
-            yield new DirectoryAttributes(rtrim($dir,'/'));
+            yield new DirectoryAttributes(rtrim($dir, '/'));
         }
     }
 
@@ -354,7 +352,7 @@ class ObsAdapter implements FilesystemAdapter
     }
 
     /**
-     * @param array{Key?: string, Prefix: ?string, ContentLength?: int, Size?: int, LastModified: string, ContentType?: string} $metadata
+     * @param array{Key?: string, Prefix: ?string, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string} $metadata
      */
     private function mapObjectMetadata(array $metadata, ?string $path = null): StorageAttributes
     {
@@ -366,11 +364,14 @@ class ObsAdapter implements FilesystemAdapter
             return new DirectoryAttributes(rtrim($path, '/'));
         }
 
+        $dateTime = isset($metadata['LastModified']) ? strtotime($metadata['LastModified']) : null;
+        $lastModified = $dateTime ?: null;
+
         return new FileAttributes(
             $path,
             $metadata['ContentLength'] ?? $metadata['Size'] ?? null,
             null,
-            isset($metadata['LastModified'])?strtotime($metadata['LastModified']) : null,
+            $lastModified,
             $metadata['ContentType'] ?? null,
             $this->extractExtraMetadata($metadata)
         );
@@ -396,29 +397,32 @@ class ObsAdapter implements FilesystemAdapter
 
     public function fileSize(string $path): FileAttributes
     {
-        $attributes=  $this->getMetadata($path, FileAttributes::ATTRIBUTE_FILE_SIZE);
+        $attributes = $this->getMetadata($path, FileAttributes::ATTRIBUTE_FILE_SIZE);
         if ($attributes->fileSize() === null) {
             throw UnableToRetrieveMetadata::fileSize($path);
         }
-        return  $attributes;
+
+        return $attributes;
     }
 
     public function mimeType(string $path): FileAttributes
     {
-        $attributes=  $this->getMetadata($path, FileAttributes::ATTRIBUTE_MIME_TYPE);
+        $attributes = $this->getMetadata($path, FileAttributes::ATTRIBUTE_MIME_TYPE);
         if ($attributes->mimeType() === null) {
             throw UnableToRetrieveMetadata::mimeType($path);
         }
-        return  $attributes;
+
+        return $attributes;
     }
 
     public function lastModified(string $path): FileAttributes
     {
-        $attributes= $this->getMetadata($path, FileAttributes::ATTRIBUTE_LAST_MODIFIED);
+        $attributes = $this->getMetadata($path, FileAttributes::ATTRIBUTE_LAST_MODIFIED);
         if ($attributes->lastModified() === null) {
             throw UnableToRetrieveMetadata::lastModified($path);
         }
-return  $attributes;
+
+        return $attributes;
     }
 
     /**
@@ -441,27 +445,28 @@ return  $attributes;
     /**
      * File list core method.
      *
-     * @return array{prefix: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified: string, ContentType?: string}>}
+     * @return array{prefix: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>}
      */
     public function listDirObjects(string $dirname = '', bool $recursive = false): array
     {
         $prefix = trim($this->pathPrefixer->prefixPath($dirname), '/');
         $prefix = empty($prefix) ? '' : $prefix . '/';
+
         $nextMarker = '';
 
         $result = [];
 
-        while (true) {
-            $options=[
-                'Bucket' => $this->bucket,
-                'Prefix' => $prefix,
-                'MaxKeys' => self::MAX_KEYS,
-                'Marker' => $nextMarker,
-            ];
-            if ($recursive===false){
-                         $options[  'Delimiter']      = self::DELIMITER;
+        $options = [
+            'Bucket' => $this->bucket,
+            'Prefix' => $prefix,
+            'MaxKeys' => self::MAX_KEYS,
+            'Marker' => $nextMarker,
+        ];
+        if (! $recursive) {
+            $options['Delimiter'] = self::DELIMITER;
+        }
 
-            }
+        while (true) {
             $model = $this->client->listObjects($options);
 
             $nextMarker = $model['NextMarker'];
@@ -469,7 +474,6 @@ return  $attributes;
             $prefixes = $model['CommonPrefixes'];
             $result = $this->processObjects($result, $objects, $dirname);
             $result = $this->processPrefixes($result, $prefixes);
-            $result = $this->processRecursive($result, $recursive);
 
             if ($nextMarker === '') {
                 break;
@@ -480,27 +484,10 @@ return  $attributes;
     }
 
     /**
-     * @param array{prefix: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified: string, ContentType?: string}>} $result
+     * @param array{prefix?: array<string>, objects?: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>} $result
+     * @param array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>|null $objects
      *
-     * @return array{prefix: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified: string, ContentType?: string}>}
-     */
-    private function processRecursive(array $result, bool $recursive): array
-    {
-        if ($recursive) {
-            foreach ($result['prefix'] as $prefix) {
-                $next = $this->listDirObjects($prefix, $recursive);
-                $result['objects'] = array_merge($result['objects'], $next['objects']);
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * @param array{prefix?: array<string>, objects?: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified: string, ContentType?: string}>} $result
-     * @param array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified: string, ContentType?: string}>|null $objects
-     *
-     * @return array{prefix?: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified: string, ContentType?: string}>}
+     * @return array{prefix?: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>}
      */
     private function processObjects(array $result, ?array $objects, string $dirname): array
     {
@@ -517,10 +504,10 @@ return  $attributes;
     }
 
     /**
-     * @param array{prefix?: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified: string, ContentType?: string}>} $result
+     * @param array{prefix?: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>} $result
      * @param array<array<string, string>>|null $prefixes
      *
-     * @return array{prefix: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified: string, ContentType?: string}>}
+     * @return array{prefix: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>}
      */
     private function processPrefixes(array $result, ?array $prefixes): array
     {
