@@ -29,6 +29,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             FinalizeClassesWithoutChildrenRector::class,
             RepeatedLiteralToClassConstantRector::class,
             PrivatizeLocalGetterToPropertyRector::class,
+
+            // bug
+            \Rector\CodingStyle\Rector\Catch_\CatchExceptionNameMatchingTypeRector::class,
         ]
     );
     $parameters->set(
