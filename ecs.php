@@ -15,6 +15,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $parameters = $containerConfigurator->parameters();
     $parameters->set(Option::PARALLEL, true);
     $parameters->set(Option::SKIP, [
+        \PHP_CodeSniffer\Standards\PSR1\Sniffs\Methods\CamelCapsMethodNameSniff::class => [
+            __DIR__ . '/tests/AdapterTest.php',
+        ],
+        \PhpCsFixer\Fixer\PhpUnit\PhpUnitMethodCasingFixer::class => [__DIR__ . '/tests/AdapterTest.php'],
+        \PhpCsFixer\Fixer\PhpUnit\PhpUnitTestAnnotationFixer::class => [__DIR__ . '/tests/AdapterTest.php'],
         // bug
         ReturnAssignmentFixer::class,
     ]);
