@@ -324,7 +324,7 @@ class ObsAdapter implements FilesystemAdapter
         }
 
         foreach ($result['prefix'] as $dir) {
-            yield new DirectoryAttributes(rtrim($dir, '/'));
+            yield new DirectoryAttributes($this->pathPrefixer->stripDirectoryPrefix($dir));
         }
     }
 
