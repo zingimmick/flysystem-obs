@@ -159,11 +159,11 @@ class ObsAdapter implements FilesystemAdapter
         }
 
         try {
-            var_dump($this->client->putObject(array_merge($options, [
+            $this->client->putObject(array_merge($options, [
                 'Bucket' => $this->bucket,
                 'Key' => $this->pathPrefixer->prefixPath($path),
                 'Body' => $contents,
-            ])));
+            ]));
         } catch (ObsException $obsException) {
             throw UnableToWriteFile::atLocation($path, '', $obsException);
         }
