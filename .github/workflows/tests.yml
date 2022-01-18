@@ -11,7 +11,7 @@ jobs:
 
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         php: [7.2, 7.3, 7.4, 8.0, 8.1]
         stability: [lowest, highest]
@@ -31,7 +31,6 @@ jobs:
         uses: shivammathur/setup-php@2.16.0
         with:
           php-version: ${{ matrix.php }}
-          ini-values: error_reporting=E_ALL
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, gd, xdebug
           coverage: xdebug
 
