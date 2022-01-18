@@ -67,6 +67,7 @@ final class AdapterTest extends FilesystemAdapterTestCase
             self::assertSame('binary/octet-stream', $this->adapter()->mimeType('unknown-mime-type.md5')->mimeType());
         });
     }
+
     protected function runScenario(callable $scenario): void
     {
         $scenario();
