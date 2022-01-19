@@ -73,10 +73,10 @@ final class ObsAdapterTest extends FilesystemAdapterTestCase
         $adapter = $this->adapter();
 
         $adapter->write('path.txt', 'contents', new Config());
-        $fileExists = $adapter->fileExists('path.txt');
+        $this->assertTrue($adapter->fileExists('path.txt'));
+sleep(1);
         $contents = $adapter->read('path.txt');
 
-        $this->assertTrue($fileExists);
         $this->assertEquals('contents', $contents);
     }
 }
