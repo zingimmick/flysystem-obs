@@ -77,6 +77,6 @@ final class ObsAdapterTest extends FilesystemAdapterTestCase
         sleep(1);
         $contents = $adapter->read('path.txt');
 
-        $this->assertEquals('contents', $contents);
+        $this->assertSame('contents', $contents);
     }
 }
