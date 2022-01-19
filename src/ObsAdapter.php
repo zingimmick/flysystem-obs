@@ -220,6 +220,8 @@ class ObsAdapter implements FilesystemAdapter
         foreach ($files as $file) {
             $this->delete($file->isFile() ? $file->path() : $file->path() . '/');
         }
+
+        $this->delete($path . '/');
     }
 
     public function createDirectory(string $path, Config $config): void
@@ -460,13 +462,14 @@ class ObsAdapter implements FilesystemAdapter
             'Bucket' => $this->bucket,
             'Prefix' => $prefix,
             'MaxKeys' => self::MAX_KEYS,
-            'Marker' => $nextMarker,
         ];
         if (! $recursive) {
             $options['Delimiter'] = self::DELIMITER;
         }
 
         while (true) {
+            $options['Marker'] = $nextMarker;
+
             $model = $this->client->listObjects($options);
 
             $nextMarker = $model['NextMarker'];
@@ -491,13 +494,17 @@ class ObsAdapter implements FilesystemAdapter
      */
     private function processObjects(array $result, ?array $objects, string $dirname): array
     {
+        $result['objects'] = [];
         if (! empty($objects)) {
             foreach ($objects as $object) {
+                // Skip current folder
+                if ($object['Key'] === $dirname) {
+                    continue;
+                }
+
                 $object['Prefix'] = $dirname;
                 $result['objects'][] = $object;
             }
-        } else {
-            $result['objects'] = [];
         }
 
         return $result;

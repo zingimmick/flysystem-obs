@@ -128,12 +128,64 @@ final class MockAdapterTest extends TestCase
                     'Body' => null,
                 ],
             ])->andReturn(new Model());
-        $this->obsAdapter->createDirectory('path', new Config());
         $this->legacyMock->shouldReceive('listObjects')
             ->withArgs([
                 [
                     'Bucket' => 'test',
+                    'Prefix' => 'path/',
                     'Delimiter' => '/',
+                ],
+            ])->andReturn(
+                new Model([
+                    'NextMarker' => '',
+                    'Contents' => [
+                        [
+                            'Key' => 'path/',
+                            'LastModified' => '2021-05-31T06:52:31.942Z',
+                            'ETag' => 'd41d8cd98f00b204e9800998ecf8427e',
+                            'Size' => 0,
+                            'StorageClass' => 'STANDARD_IA',
+                            'Owner' => [
+                                'DisplayName' => 'zingimmick',
+                                'ID' => '0c85ae1126000f380f21c00e77706640',
+                            ],
+                        ],
+                    ],
+                ]),
+                new Model([
+                    'NextMarker' => '',
+                    'Contents' => [],
+                ])
+            );
+        $this->legacyMock->shouldReceive('listObjects')
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Prefix' => 'path/',
+                    'MaxKeys' => 1000,
+                    'Delimiter' => '/',
+                    'Marker' => '',
+                ],
+            ])->andReturn(new Model([
+                'NextMarker' => '',
+                'Contents' => [
+                    [
+                        'Key' => 'path/',
+                        'LastModified' => '2021-05-31T06:52:31.942Z',
+                        'ETag' => 'd41d8cd98f00b204e9800998ecf8427e',
+                        'Size' => 0,
+                        'StorageClass' => 'STANDARD_IA',
+                        'Owner' => [
+                            'DisplayName' => 'zingimmick',
+                            'ID' => '0c85ae1126000f380f21c00e77706640',
+                        ],
+                    ],
+                ],
+            ]));
+        $this->legacyMock->shouldReceive('listObjects')
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
                     'Prefix' => 'path/',
                     'MaxKeys' => 1000,
                     'Marker' => '',
@@ -189,12 +241,16 @@ final class MockAdapterTest extends TestCase
                     'Reason' => 'OK',
                 ]
             ));
-        $contents = iterator_to_array($this->obsAdapter->listContents('path', false));
-        self::assertContainsOnlyInstancesOf(DirectoryAttributes::class, $contents);
-        self::assertCount(1, $contents);
-        /** @var \League\Flysystem\DirectoryAttributes $directory */
-        $directory = $contents[0];
-        self::assertSame('path', $directory->path());
+        $this->legacyMock->shouldReceive('deleteObject')
+            ->withArgs([[
+                'Bucket' => 'test',
+                'Key' => 'path/',
+            ]]);
+        $this->obsAdapter->createDirectory('path', new Config());
+        self::assertTrue($this->obsAdapter->directoryExists('path'));
+        self::assertEquals([], iterator_to_array($this->obsAdapter->listContents('path', false)));
+        $this->obsAdapter->deleteDirectory('path');
+        self::assertFalse($this->obsAdapter->directoryExists('path'));
     }
 
     public function testSetVisibility(): void

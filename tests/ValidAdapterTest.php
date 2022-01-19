@@ -80,12 +80,10 @@ final class ValidAdapterTest extends TestCase
     public function testCreateDir(): void
     {
         $this->obsAdapter->createDirectory('fixture/path', new Config());
-        $contents = iterator_to_array($this->obsAdapter->listContents('fixture/path', false));
-        self::assertContainsOnlyInstancesOf(DirectoryAttributes::class, $contents);
-        self::assertCount(1, $contents);
-        /** @var \League\Flysystem\DirectoryAttributes $directory */
-        $directory = $contents[0];
-        self::assertSame('fixture/path', $directory->path());
+        self::assertTrue($this->obsAdapter->directoryExists('fixture/path'));
+        self::assertEquals([], iterator_to_array($this->obsAdapter->listContents('fixture/path', false)));
+        $this->obsAdapter->deleteDirectory('fixture/path');
+        self::assertFalse($this->obsAdapter->directoryExists('fixture/path'));
     }
 
     public function testDirectoryExists(): void
