@@ -220,6 +220,8 @@ class ObsAdapter implements FilesystemAdapter
         foreach ($files as $file) {
             $this->delete($file->isFile() ? $file->path() : $file->path() . '/');
         }
+
+        $this->delete($path . '/');
     }
 
     public function createDirectory(string $path, Config $config): void
@@ -352,7 +354,7 @@ class ObsAdapter implements FilesystemAdapter
     }
 
     /**
-     * @param array{Key?: string, Prefix: ?string, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string} $metadata
+     * @param array{Key: string|null, Prefix: ?string, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string} $metadata
      */
     private function mapObjectMetadata(array $metadata, ?string $path = null): StorageAttributes
     {
@@ -445,7 +447,7 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * File list core method.
      *
-     * @return array{prefix: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>}
+     * @return array{prefix: array<string>, objects: array<array{Key: string|null, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>}
      */
     public function listDirObjects(string $dirname = '', bool $recursive = false): array
     {
@@ -460,13 +462,14 @@ class ObsAdapter implements FilesystemAdapter
             'Bucket' => $this->bucket,
             'Prefix' => $prefix,
             'MaxKeys' => self::MAX_KEYS,
-            'Marker' => $nextMarker,
         ];
         if (! $recursive) {
             $options['Delimiter'] = self::DELIMITER;
         }
 
         while (true) {
+            $options['Marker'] = $nextMarker;
+
             $model = $this->client->listObjects($options);
 
             $nextMarker = $model['NextMarker'];
@@ -484,30 +487,34 @@ class ObsAdapter implements FilesystemAdapter
     }
 
     /**
-     * @param array{prefix?: array<string>, objects?: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>} $result
-     * @param array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>|null $objects
+     * @param array{prefix?: array<string>, objects?: array<array{Key: string|null, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>} $result
+     * @param array<array{Key: string|null, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>|null $objects
      *
-     * @return array{prefix?: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>}
+     * @return array{prefix?: array<string>, objects: array<array{Key: string|null, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>}
      */
     private function processObjects(array $result, ?array $objects, string $dirname): array
     {
+        $result['objects'] = [];
         if (! empty($objects)) {
             foreach ($objects as $object) {
+                // Skip current folder
+                if ($object['Key'] === $dirname) {
+                    continue;
+                }
+
                 $object['Prefix'] = $dirname;
                 $result['objects'][] = $object;
             }
-        } else {
-            $result['objects'] = [];
         }
 
         return $result;
     }
 
     /**
-     * @param array{prefix?: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>} $result
+     * @param array{prefix?: array<string>, objects: array<array{Key: string|null, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>} $result
      * @param array<array<string, string>>|null $prefixes
      *
-     * @return array{prefix: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>}
+     * @return array{prefix: array<string>, objects: array<array{Key: string|null, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>}
      */
     private function processPrefixes(array $result, ?array $prefixes): array
     {
