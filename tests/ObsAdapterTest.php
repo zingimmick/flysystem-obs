@@ -44,15 +44,6 @@ final class ObsAdapterTest extends FilesystemAdapterTestCase
 
         $adapter = $this->adapter();
         $adapter->deleteDirectory('/');
-        /** @var \League\Flysystem\StorageAttributes[] $listing */
-        $listing = $adapter->listContents('', false);
-        foreach ($listing as $singleListing) {
-            if ($singleListing->isFile()) {
-                $adapter->delete($singleListing->path());
-            } else {
-                $adapter->deleteDirectory($singleListing->path());
-            }
-        }
     }
 
     /**
