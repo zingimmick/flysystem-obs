@@ -354,7 +354,7 @@ class ObsAdapter implements FilesystemAdapter
     }
 
     /**
-     * @param array{Key?: string, Prefix: ?string, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string} $metadata
+     * @param array{Key: string|null, Prefix: ?string, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string} $metadata
      */
     private function mapObjectMetadata(array $metadata, ?string $path = null): StorageAttributes
     {
@@ -447,7 +447,7 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * File list core method.
      *
-     * @return array{prefix: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>}
+     * @return array{prefix: array<string>, objects: array<array{Key: string|null, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>}
      */
     public function listDirObjects(string $dirname = '', bool $recursive = false): array
     {
@@ -487,10 +487,10 @@ class ObsAdapter implements FilesystemAdapter
     }
 
     /**
-     * @param array{prefix?: array<string>, objects?: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>} $result
-     * @param array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>|null $objects
+     * @param array{prefix?: array<string>, objects?: array<array{Key: string|null, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>} $result
+     * @param array<array{Key: string|null, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>|null $objects
      *
-     * @return array{prefix?: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>}
+     * @return array{prefix?: array<string>, objects: array<array{Key: string|null, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>}
      */
     private function processObjects(array $result, ?array $objects, string $dirname): array
     {
@@ -511,10 +511,10 @@ class ObsAdapter implements FilesystemAdapter
     }
 
     /**
-     * @param array{prefix?: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>} $result
+     * @param array{prefix?: array<string>, objects: array<array{Key: string|null, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>} $result
      * @param array<array<string, string>>|null $prefixes
      *
-     * @return array{prefix: array<string>, objects: array<array{Key?: string, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>}
+     * @return array{prefix: array<string>, objects: array<array{Key: string|null, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>}
      */
     private function processPrefixes(array $result, ?array $prefixes): array
     {
