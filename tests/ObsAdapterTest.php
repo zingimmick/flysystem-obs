@@ -58,16 +58,4 @@ final class ObsAdapterTest extends FilesystemAdapterTestCase
             self::assertSame('binary/octet-stream', $this->adapter()->mimeType('unknown-mime-type.md5')->mimeType());
         });
     }
-
-    public function testMore(): void
-    {
-        $adapter = $this->adapter();
-
-        $adapter->write('path.txt', 'contents', new Config());
-        $this->assertTrue($adapter->fileExists('path.txt'));
-        sleep(1);
-        $contents = $adapter->read('path.txt');
-
-        $this->assertSame('contents', $contents);
-    }
 }
