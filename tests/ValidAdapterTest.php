@@ -84,11 +84,7 @@ class ValidAdapterTest extends TestCase
     public function testCreateDir(): void
     {
         $this->adapter->createDir('fixture/path', new Config());
-        self::assertSame([[
-            'type' => 'dir',
-            'path' => 'fixture/path',
-        ],
-        ], $this->adapter->listContents('fixture/path'));
+        self::assertSame([], $this->adapter->listContents('fixture/path'));
     }
 
     public function testSetVisibility(): void

@@ -190,15 +190,15 @@ class ObsAdapter extends AbstractAdapter
      */
     public function copy($path, $newpath)
     {
-        $path = $this->applyPathPrefix($path);
         $newpath = $this->applyPathPrefix($newpath);
 
         try {
             $this->client->copyObject([
                 'Bucket' => $this->bucket,
                 'Key' => $newpath,
-                'CopySource' => $this->bucket . '/' . $path,
+                'CopySource' => $this->bucket . '/' . $this->applyPathPrefix($path),
                 'MetadataDirective' => ObsClient::CopyMetadata,
+                'ACL' => $this->getRawVisibility($path),
             ]);
         } catch (ObsException $exception) {
             return false;
@@ -241,9 +241,9 @@ class ObsAdapter extends AbstractAdapter
     {
         $files = $this->listContents($dirname, true);
         foreach ($files as $file) {
-            $this->delete($file['path']);
+            $this->delete($file['type'] === 'file' ? $file['path'] : $file['path'] . '/');
         }
-
+        $this->delete($dirname . '/');
         return ! $this->has($dirname);
     }
 
@@ -422,7 +422,7 @@ class ObsAdapter extends AbstractAdapter
         foreach ($result['prefix'] as $dir) {
             $list[] = [
                 'type' => 'dir',
-                'path' => $dir,
+                'path' => rtrim($this->removePathPrefix($dir), '/'),
             ];
         }
 
@@ -614,18 +614,20 @@ class ObsAdapter extends AbstractAdapter
         while (true) {
             $model = $this->client->listObjects([
                 'Bucket' => $this->bucket,
-                'Delimiter' => self::DELIMITER,
+
                 'Prefix' => $dirname,
                 'MaxKeys' => self::MAX_KEYS,
                 'Marker' => $nextMarker,
             ]);
+            if ($recursive === false) {
+                $model['Delimiter'] = self::DELIMITER;
+            }
 
             $nextMarker = $model['NextMarker'];
             $objects = $model['Contents'];
             $prefixes = $model['CommonPrefixes'];
             $result = $this->processObjects($result, $objects, $dirname);
             $result = $this->processPrefixes($result, $prefixes);
-            $result = $this->processRecursive($result, $recursive);
 
             if ($nextMarker === '') {
                 break;
@@ -635,28 +637,18 @@ class ObsAdapter extends AbstractAdapter
         return $result;
     }
 
-    private function processRecursive(array $result, $recursive): array
-    {
-        if ($recursive) {
-            foreach ($result['prefix'] as $prefix) {
-                $next = $this->listDirObjects($prefix, $recursive);
-                $result['objects'] = array_merge($result['objects'], $next['objects']);
-            }
-        }
-
-        return $result;
-    }
-
     private function processObjects(array $result, $objects, $dirname): array
     {
+        $result['objects'] = [];
         if (! empty($objects)) {
             foreach ($objects as $object) {
+                if ($object['Key'] === $dirname) {
+                    continue;
+                }
                 $result['objects'][] = array_merge($object, [
                     'Prefix' => $dirname,
                 ]);
             }
-        } else {
-            $result['objects'] = [];
         }
 
         return $result;

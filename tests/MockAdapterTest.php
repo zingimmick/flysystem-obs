@@ -9,6 +9,7 @@ use League\Flysystem\Config;
 use Obs\Internal\Common\Model;
 use Obs\ObsClient;
 use Obs\ObsException;
+use Rector\Core\ValueObject\Visibility;
 use Zing\Flysystem\Obs\ObsAdapter;
 
 class MockAdapterTest extends TestCase
@@ -110,9 +111,10 @@ class MockAdapterTest extends TestCase
                 'Bucket' => 'test',
                 'Key' => 'copy.txt',
                 'CopySource' => 'test/file.txt',
-                'MetadataDirective' => 'COPY',
+                'MetadataDirective' => 'COPY', 'ACL' => 'public'
             ],
             ])->andReturn(new Model());
+        $this->mockGetVisibility('file.txt',Visibility::PUBLIC);
         $this->adapter->copy('file.txt', 'copy.txt');
         $this->mockGetObject('copy.txt', 'write');
         self::assertSame('write', $this->adapter->read('copy.txt')['contents']);
@@ -143,7 +145,6 @@ class MockAdapterTest extends TestCase
         $this->client->shouldReceive('listObjects')
             ->withArgs([[
                 'Bucket' => 'test',
-                'Delimiter' => '/',
                 'Prefix' => 'path/',
                 'MaxKeys' => 1000,
                 'Marker' => '',
@@ -197,10 +198,8 @@ class MockAdapterTest extends TestCase
                     'Reason' => 'OK',
                 ]
             ));
-        self::assertSame([[
-            'type' => 'dir',
-            'path' => 'path',
-        ],
+        self::assertSame([
+
         ], $this->adapter->listContents('path'));
     }
 
@@ -319,7 +318,7 @@ class MockAdapterTest extends TestCase
                 'Bucket' => 'test',
                 'Key' => 'to.txt',
                 'CopySource' => 'test/from.txt',
-                'MetadataDirective' => 'COPY',
+                'MetadataDirective' => 'COPY', 'ACL' => 'public'
             ],
             ])->andReturn(new Model());
         $this->client->shouldReceive('deleteObject')
@@ -328,6 +327,7 @@ class MockAdapterTest extends TestCase
                 'Key' => 'from.txt',
             ],
             ])->andReturn(new Model());
+        $this->mockGetVisibility('from.txt',Visibility::PUBLIC);
         $this->adapter->rename('from.txt', 'to.txt');
         $this->client->shouldReceive('getObjectMetadata')
             ->withArgs([[
@@ -352,7 +352,6 @@ class MockAdapterTest extends TestCase
         $this->client->shouldReceive('listObjects')
             ->withArgs([[
                 'Bucket' => 'test',
-                'Delimiter' => '/',
                 'Prefix' => 'path/',
                 'MaxKeys' => 1000,
                 'Marker' => '',
@@ -407,8 +406,7 @@ class MockAdapterTest extends TestCase
             ])->andThrow(new ObsException());
         $this->client->shouldReceive('deleteObject')
             ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'path',
+                'Bucket' => 'test', 'Key' => 'path/'
             ],
             ])->andReturn(new Model());
         $this->client->shouldReceive('deleteObject')
@@ -709,7 +707,6 @@ class MockAdapterTest extends TestCase
         $this->client->shouldReceive('listObjects')
             ->withArgs([[
                 'Bucket' => 'test',
-                'Delimiter' => '/',
                 'Prefix' => 'path/',
                 'MaxKeys' => 1000,
                 'Marker' => '',
@@ -725,10 +722,10 @@ class MockAdapterTest extends TestCase
                     'Marker' => '',
                     'NextMarker' => '',
                     'Contents' => [[
-                        'Key' => 'path/',
-                        'LastModified' => '2021-05-31T15:23:24.217Z',
-                        'ETag' => '"d41d8cd98f00b204e9800998ecf8427e"',
-                        'Size' => 0,
+                        'Key' => 'path/file.txt',
+                        'LastModified' => 'Mon, 31 May 2021 06:52:32 GMT',
+                        'ETag' => 'd41d8cd98f00b204e9800998ecf8427e',
+                        'Size' => 9,
                         'StorageClass' => 'STANDARD_IA',
                         'Owner' => [
                             'DisplayName' => 'zingimmick',
@@ -784,7 +781,6 @@ class MockAdapterTest extends TestCase
         $this->client->shouldReceive('listObjects')
             ->withArgs([[
                 'Bucket' => 'test',
-                'Delimiter' => '/',
                 'Prefix' => 'path1/',
                 'MaxKeys' => 1000,
                 'Marker' => '',
@@ -799,38 +795,7 @@ class MockAdapterTest extends TestCase
         $this->client->shouldReceive('listObjects')
             ->withArgs([[
                 'Bucket' => 'test',
-                'Delimiter' => '/',
                 'Prefix' => 'a/',
-                'MaxKeys' => 1000,
-                'Marker' => '',
-            ],
-            ])->andReturn(new Model([
-                'ContentLength' => '333',
-                'Date' => 'Mon, 31 May 2021 15:23:25 GMT',
-                'RequestId' => '00000179C305C593920E2644AED41021',
-                'Id2' => '32AAAQAAEAABAAAQAAEAABAAAQAAEAABCSYw8g3pRtVZNn+ok4GA5fOUfUpb7nSm',
-                'Reserved' => 'amazon, aws and amazon web services are trademarks or registered trademarks of Amazon Technologies, Inc',
-                'IsTruncated' => false,
-                'Marker' => '',
-                'NextMarker' => '',
-                'Contents' => [],
-                'Name' => 'test',
-                'Prefix' => 'a/',
-                'Delimiter' => '/',
-                'MaxKeys' => 1000,
-                'CommonPrefixes' => [[
-                    'Prefix' => 'a/b/',
-                ],
-                ],
-                'Location' => 'cn-east-3',
-                'HttpStatusCode' => 200,
-                'Reason' => 'OK',
-            ]));
-        $this->client->shouldReceive('listObjects')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Delimiter' => '/',
-                'Prefix' => 'a/b/',
                 'MaxKeys' => 1000,
                 'Marker' => '',
             ],
@@ -853,17 +818,20 @@ class MockAdapterTest extends TestCase
                         'DisplayName' => 'zingimmick',
                         'ID' => '0c85ae1126000f380f21c00e77706640',
                     ],
-                ],
-                ],
+                ],],
                 'Name' => 'test',
-                'Prefix' => 'a/b/',
+                'Prefix' => 'a/',
                 'Delimiter' => '/',
                 'MaxKeys' => 1000,
-                'CommonPrefixes' => [],
+                'CommonPrefixes' => [[
+                    'Prefix' => 'a/b/',
+                ],
+                ],
                 'Location' => 'cn-east-3',
                 'HttpStatusCode' => 200,
                 'Reason' => 'OK',
             ]));
+
         $this->mockGetMetadata('a/b/file.txt');
         self::assertSame([[
             'type' => 'file',
@@ -873,7 +841,7 @@ class MockAdapterTest extends TestCase
             'size' => 9,
         ], [
             'type' => 'dir',
-            'path' => 'a/b/',
+            'path' => 'a/b',
         ],
         ], $this->adapter->listContents('a', true));
     }
