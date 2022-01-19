@@ -242,10 +242,12 @@ final class MockAdapterTest extends TestCase
                 ]
             ));
         $this->legacyMock->shouldReceive('deleteObject')
-            ->withArgs([[
-                'Bucket' => 'test',
-                'Key' => 'path/',
-            ]]);
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'path/',
+                ],
+            ]);
         $this->obsAdapter->createDirectory('path', new Config());
         self::assertTrue($this->obsAdapter->directoryExists('path'));
         self::assertEquals([], iterator_to_array($this->obsAdapter->listContents('path', false)));
