@@ -41,18 +41,18 @@ final class ObsAdapterTest extends FilesystemAdapterTestCase
     protected function tearDown(): void
     {
         parent::tearDown();
-
-        $adapter = $this->adapter();
-        $adapter->deleteDirectory('/');
-        /** @var \League\Flysystem\StorageAttributes[] $listing */
-        $listing = $adapter->listContents('', false);
-        foreach ($listing as $singleListing) {
-            if ($singleListing->isFile()) {
-                $adapter->delete($singleListing->path());
-            } else {
-                $adapter->deleteDirectory($singleListing->path());
-            }
-        }
+//
+//        $adapter = $this->adapter();
+//        $adapter->deleteDirectory('/');
+//        /** @var \League\Flysystem\StorageAttributes[] $listing */
+//        $listing = $adapter->listContents('', false);
+//        foreach ($listing as $singleListing) {
+//            if ($singleListing->isFile()) {
+//                $adapter->delete($singleListing->path());
+//            } else {
+//                $adapter->deleteDirectory($singleListing->path());
+//            }
+//        }
     }
 
     /**
