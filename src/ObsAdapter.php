@@ -28,7 +28,6 @@ use Obs\ObsClient;
 use Obs\ObsException;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
-use Throwable;
 
 class ObsAdapter implements FilesystemAdapter
 {
@@ -185,7 +184,7 @@ class ObsAdapter implements FilesystemAdapter
             /** @var string $visibility */
             $visibility = $this->visibility($source)
                 ->visibility();
-        } catch (Throwable $exception) {
+        } catch (FilesystemOperationFailed $exception) {
             throw UnableToCopyFile::fromLocationTo($source, $destination, $exception);
         }
 
@@ -258,7 +257,7 @@ class ObsAdapter implements FilesystemAdapter
                     'Key' => $this->pathPrefixer->prefixPath($path),
                 ]
             );
-        } catch (Throwable $exception) {
+        } catch (ObsException $exception) {
             throw UnableToRetrieveMetadata::visibility($path, '', $exception);
         }
 
@@ -271,7 +270,7 @@ class ObsAdapter implements FilesystemAdapter
     {
         try {
             $this->getMetadata($path, FileAttributes::ATTRIBUTE_PATH);
-        } catch (Throwable $throwable) {
+        } catch (FilesystemOperationFailed $throwable) {
             return false;
         }
 
@@ -290,7 +289,7 @@ class ObsAdapter implements FilesystemAdapter
             $model = $this->client->listObjects($options);
 
             return $model['Contents'] !== [];
-        } catch (Throwable $exception) {
+        } catch (ObsException $exception) {
             throw UnableToCheckDirectoryExistence::forLocation($path, $exception);
         }
     }
@@ -439,7 +438,7 @@ class ObsAdapter implements FilesystemAdapter
             ]);
 
             return $model['Body'];
-        } catch (Throwable $throwable) {
+        } catch (ObsException $throwable) {
             throw UnableToReadFile::fromLocation($path, '', $throwable);
         }
     }
