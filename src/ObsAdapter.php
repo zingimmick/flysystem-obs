@@ -184,8 +184,8 @@ class ObsAdapter implements FilesystemAdapter
             /** @var string $visibility */
             $visibility = $this->visibility($source)
                 ->visibility();
-        } catch (FilesystemOperationFailed $exception) {
-            throw UnableToCopyFile::fromLocationTo($source, $destination, $exception);
+        } catch (FilesystemOperationFailed $filesystemOperationFailed) {
+            throw UnableToCopyFile::fromLocationTo($source, $destination, $filesystemOperationFailed);
         }
 
         try {
@@ -196,8 +196,8 @@ class ObsAdapter implements FilesystemAdapter
                 'MetadataDirective' => ObsClient::CopyMetadata,
                 'ACL' => $this->visibilityConverter->visibilityToAcl($visibility),
             ]));
-        } catch (ObsException $exception) {
-            throw UnableToCopyFile::fromLocationTo($source, $destination, $exception);
+        } catch (ObsException $obsException) {
+            throw UnableToCopyFile::fromLocationTo($source, $destination, $obsException);
         }
     }
 
@@ -230,8 +230,8 @@ class ObsAdapter implements FilesystemAdapter
                 'visibility' => $this->visibilityConverter->defaultForDirectories(),
             ]);
             $this->write(trim($path, '/') . '/', '', $config);
-        } catch (FilesystemOperationFailed $exception) {
-            throw UnableToCreateDirectory::dueToFailure($path, $exception);
+        } catch (FilesystemOperationFailed $filesystemOperationFailed) {
+            throw UnableToCreateDirectory::dueToFailure($path, $filesystemOperationFailed);
         }
     }
 
@@ -243,8 +243,8 @@ class ObsAdapter implements FilesystemAdapter
                 'Key' => $this->pathPrefixer->prefixPath($path),
                 'ACL' => $this->visibilityConverter->visibilityToAcl($visibility),
             ]);
-        } catch (ObsException $exception) {
-            throw UnableToSetVisibility::atLocation($path, '', $exception);
+        } catch (ObsException $obsException) {
+            throw UnableToSetVisibility::atLocation($path, '', $obsException);
         }
     }
 
@@ -257,8 +257,8 @@ class ObsAdapter implements FilesystemAdapter
                     'Key' => $this->pathPrefixer->prefixPath($path),
                 ]
             );
-        } catch (ObsException $exception) {
-            throw UnableToRetrieveMetadata::visibility($path, '', $exception);
+        } catch (ObsException $obsException) {
+            throw UnableToRetrieveMetadata::visibility($path, '', $obsException);
         }
 
         $visibility = $this->visibilityConverter->aclToVisibility((array) $result->get('Grants'));
@@ -270,7 +270,7 @@ class ObsAdapter implements FilesystemAdapter
     {
         try {
             $this->getMetadata($path, FileAttributes::ATTRIBUTE_PATH);
-        } catch (FilesystemOperationFailed $throwable) {
+        } catch (FilesystemOperationFailed $filesystemOperationFailed) {
             return false;
         }
 
@@ -289,8 +289,8 @@ class ObsAdapter implements FilesystemAdapter
             $model = $this->client->listObjects($options);
 
             return $model['Contents'] !== [];
-        } catch (ObsException $exception) {
-            throw UnableToCheckDirectoryExistence::forLocation($path, $exception);
+        } catch (ObsException $obsException) {
+            throw UnableToCheckDirectoryExistence::forLocation($path, $obsException);
         }
     }
 
@@ -339,8 +339,8 @@ class ObsAdapter implements FilesystemAdapter
                 'Bucket' => $this->bucket,
                 'Key' => $this->pathPrefixer->prefixPath($path),
             ]);
-        } catch (ObsException $exception) {
-            throw UnableToRetrieveMetadata::create($path, $type, '', $exception);
+        } catch (ObsException $obsException) {
+            throw UnableToRetrieveMetadata::create($path, $type, '', $obsException);
         }
 
         $attributes = $this->mapObjectMetadata($metadata->toArray(), $path);
@@ -438,8 +438,8 @@ class ObsAdapter implements FilesystemAdapter
             ]);
 
             return $model['Body'];
-        } catch (ObsException $throwable) {
-            throw UnableToReadFile::fromLocation($path, '', $throwable);
+        } catch (ObsException $obsException) {
+            throw UnableToReadFile::fromLocation($path, '', $obsException);
         }
     }
 
