@@ -226,7 +226,10 @@ class ObsAdapter implements FilesystemAdapter
     public function createDirectory(string $path, Config $config): void
     {
         $defaultVisibility = $config->get('directory_visibility', $this->visibilityConverter->defaultForDirectories());
-        $config = $config->withDefaults(['visibility' => $defaultVisibility]);
+        $config = $config->withDefaults([
+            'visibility' => $defaultVisibility,
+        ]);
+
         try {
             $this->write(trim($path, '/') . '/', '', $config);
         } catch (FilesystemOperationFailed $filesystemOperationFailed) {
