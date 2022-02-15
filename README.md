@@ -13,7 +13,7 @@
 Require Flysystem OBS using [Composer](https://getcomposer.org):
 
 ```bash
-composer require zing/flysystem-obs
+composer require zing/flysystem-obs:^1.0
 ```
 
 ## Usage
