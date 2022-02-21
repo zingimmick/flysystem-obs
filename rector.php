@@ -10,10 +10,10 @@ use Rector\PHPUnit\Set\PHPUnitSetList;
 use Rector\Privatization\Rector\Class_\FinalizeClassesWithoutChildrenRector;
 use Rector\Privatization\Rector\Class_\RepeatedLiteralToClassConstantRector;
 use Rector\Privatization\Rector\MethodCall\PrivatizeLocalGetterToPropertyRector;
-use Rector\Set\ValueObject\SetList;
+use Rector\Set\ValueObject\LevelSetList;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Zing\CodingStandard\Set\RectorSetList;
-use Rector\Set\ValueObject\LevelSetList;
+
 return static function (ContainerConfigurator $containerConfigurator): void {
     $containerConfigurator->import(RectorSetList::CUSTOM);
     $containerConfigurator->import(PHPUnitSetList::PHPUNIT_CODE_QUALITY);

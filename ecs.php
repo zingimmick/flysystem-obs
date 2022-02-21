@@ -19,6 +19,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         YodaStyleFixer::class => null,
         PhpUnitInternalClassFixer::class,
         PhpUnitTestClassRequiresCoversFixer::class,
+        \SlevomatCodingStandard\Sniffs\TypeHints\ReturnTypeHintSniff::class,
+        \PHP_CodeSniffer\Standards\Squiz\Sniffs\Commenting\LongConditionClosingCommentSniff::class,
     ]);
     $parameters->set(
         Option::PATHS,

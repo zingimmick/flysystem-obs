@@ -29,7 +29,7 @@ class ObsAdapter extends AbstractAdapter
     private const MAX_KEYS = 1000;
 
     /**
-     * @var array
+     * @var string[]
      */
     protected static $metaOptions = ['ACL', 'Expires', 'StorageClass'];
 
@@ -246,6 +246,7 @@ class ObsAdapter extends AbstractAdapter
         }
 
         $this->delete($dirname . '/');
+
         return ! $this->has($dirname);
     }
 
@@ -332,7 +333,7 @@ class ObsAdapter extends AbstractAdapter
                 continue;
             }
 
-            if (! in_array($grant['Grantee']['URI'], [self::PUBLIC_GRANT_URI, ObsClient::AllUsers], true)) {
+            if (! \in_array($grant['Grantee']['URI'], [self::PUBLIC_GRANT_URI, ObsClient::AllUsers], true)) {
                 continue;
             }
 
@@ -432,6 +433,9 @@ class ObsAdapter extends AbstractAdapter
     }
 
     /**
+     * @param mixed $metadata
+     * @param mixed|null $path
+     *
      * @return array<string, mixed>|array<string, string>
      */
     private function mapObjectMetadata($metadata, $path = null)
@@ -624,7 +628,7 @@ class ObsAdapter extends AbstractAdapter
                 'MaxKeys' => self::MAX_KEYS,
                 'Marker' => $nextMarker,
             ]);
-            if (!$recursive) {
+            if (! $recursive) {
                 $model['Delimiter'] = self::DELIMITER;
             }
 
@@ -643,6 +647,9 @@ class ObsAdapter extends AbstractAdapter
     }
 
     /**
+     * @param mixed $objects
+     * @param mixed $dirname
+     *
      * @return mixed[]
      */
     private function processObjects(array $result, $objects, $dirname): array
@@ -664,6 +671,8 @@ class ObsAdapter extends AbstractAdapter
     }
 
     /**
+     * @param mixed $prefixes
+     *
      * @return mixed[]
      */
     private function processPrefixes(array $result, $prefixes): array

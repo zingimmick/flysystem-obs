@@ -19,6 +19,6 @@ class SignUrlTest extends TestCase
             ->withArgs(['test', 10, [], 'GET'])->once()->andReturn('test-url');
         $filesystem = new Filesystem($adapter);
         $filesystem->addPlugin(new SignUrl());
-        self::assertSame('test-url', $filesystem->signUrl('test', 10));
+        static::assertSame('test-url', $filesystem->signUrl('test', 10));
     }
 }

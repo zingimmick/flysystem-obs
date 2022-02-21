@@ -22,6 +22,6 @@ class KernelTest extends TestCase
             ->andReturn(Mockery::mock(ObsClient::class));
         $filesystem = new Filesystem($adapter);
         $filesystem->addPlugin(new Kernel());
-        self::assertInstanceOf(ObsClient::class, $filesystem->kernel());
+        static::assertInstanceOf(ObsClient::class, $filesystem->kernel());
     }
 }
