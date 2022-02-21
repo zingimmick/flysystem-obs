@@ -148,7 +148,7 @@ class ObsAdapter implements FilesystemAdapter
             }
         }
 
-        $shouldDetermineMimetype = $contents !== '' && ! array_key_exists('ContentType', $options);
+        $shouldDetermineMimetype = $contents !== '' && ! \array_key_exists('ContentType', $options);
 
         if ($shouldDetermineMimetype) {
             $mimeType = $this->mimeTypeDetector->detectMimeType($path, $contents);

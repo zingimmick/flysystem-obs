@@ -234,7 +234,7 @@ final class InvalidAdapterTest extends TestCase
     public function testDirectoryExists(): void
     {
         if (! class_exists(UnableToCheckDirectoryExistence::class)) {
-            $this->markTestSkipped('Require League Flysystem v3');
+            self::markTestSkipped('Require League Flysystem v3');
         }
 
         $this->expectException(UnableToCheckDirectoryExistence::class);

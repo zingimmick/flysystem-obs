@@ -250,7 +250,7 @@ final class MockAdapterTest extends TestCase
             ]);
         $this->obsAdapter->createDirectory('path', new Config());
         self::assertTrue($this->obsAdapter->directoryExists('path'));
-        self::assertEquals([], iterator_to_array($this->obsAdapter->listContents('path', false)));
+        self::assertSame([], iterator_to_array($this->obsAdapter->listContents('path', false)));
         $this->obsAdapter->deleteDirectory('path');
         self::assertFalse($this->obsAdapter->directoryExists('path'));
     }
@@ -1131,8 +1131,8 @@ final class MockAdapterTest extends TestCase
                     'Body' => null,
                 ],
             ])->andReturn(new Model());
-        $this->assertFalse($this->obsAdapter->directoryExists('fixture/exists-directory'));
+        self::assertFalse($this->obsAdapter->directoryExists('fixture/exists-directory'));
         $this->obsAdapter->createDirectory('fixture/exists-directory', new Config());
-        $this->assertTrue($this->obsAdapter->directoryExists('fixture/exists-directory'));
+        self::assertTrue($this->obsAdapter->directoryExists('fixture/exists-directory'));
     }
 }

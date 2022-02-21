@@ -81,16 +81,16 @@ final class ValidAdapterTest extends TestCase
     {
         $this->obsAdapter->createDirectory('fixture/path', new Config());
         self::assertTrue($this->obsAdapter->directoryExists('fixture/path'));
-        self::assertEquals([], iterator_to_array($this->obsAdapter->listContents('fixture/path', false)));
+        self::assertSame([], iterator_to_array($this->obsAdapter->listContents('fixture/path', false)));
         $this->obsAdapter->deleteDirectory('fixture/path');
         self::assertFalse($this->obsAdapter->directoryExists('fixture/path'));
     }
 
     public function testDirectoryExists(): void
     {
-        $this->assertFalse($this->obsAdapter->directoryExists('fixture/exists-directory'));
+        self::assertFalse($this->obsAdapter->directoryExists('fixture/exists-directory'));
         $this->obsAdapter->createDirectory('fixture/exists-directory', new Config());
-        $this->assertTrue($this->obsAdapter->directoryExists('fixture/exists-directory'));
+        self::assertTrue($this->obsAdapter->directoryExists('fixture/exists-directory'));
     }
 
     public function testSetVisibility(): void
