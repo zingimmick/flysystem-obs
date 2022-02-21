@@ -124,9 +124,13 @@ class ValidAdapterTest extends TestCase
         self::assertSame('write', $this->adapter->read('fixture/file.txt')['contents']);
     }
 
-    public function provideVisibilities()
+    /**
+     * @return \Iterator<string[]>
+     */
+    public function provideVisibilities(): \Iterator
     {
-        return [[AdapterInterface::VISIBILITY_PUBLIC], [AdapterInterface::VISIBILITY_PRIVATE]];
+        yield [AdapterInterface::VISIBILITY_PUBLIC];
+        yield [AdapterInterface::VISIBILITY_PRIVATE];
     }
 
     /**

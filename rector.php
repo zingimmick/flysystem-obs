@@ -13,13 +13,11 @@ use Rector\Privatization\Rector\MethodCall\PrivatizeLocalGetterToPropertyRector;
 use Rector\Set\ValueObject\SetList;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Zing\CodingStandard\Set\RectorSetList;
-
+use Rector\Set\ValueObject\LevelSetList;
 return static function (ContainerConfigurator $containerConfigurator): void {
     $containerConfigurator->import(RectorSetList::CUSTOM);
     $containerConfigurator->import(PHPUnitSetList::PHPUNIT_CODE_QUALITY);
-    $containerConfigurator->import(SetList::PHP_70);
-    $containerConfigurator->import(SetList::PHP_71);
-    $containerConfigurator->import(SetList::PHP_72);
+    $containerConfigurator->import(LevelSetList::UP_TO_PHP_72);
 
     $parameters = $containerConfigurator->parameters();
     $parameters->set(
@@ -31,6 +29,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             FinalizeClassesWithoutChildrenRector::class,
             RepeatedLiteralToClassConstantRector::class,
             PrivatizeLocalGetterToPropertyRector::class,
+            \Rector\TypeDeclaration\Rector\FunctionLike\ReturnTypeDeclarationRector::class,
+            \Rector\TypeDeclaration\Rector\FunctionLike\ParamTypeDeclarationRector::class,
+            \Rector\Naming\Rector\Foreach_\RenameForeachValueVariableToMatchExprVariableRector::class,
+            \Rector\TypeDeclaration\Rector\ClassMethod\AddMethodCallBasedStrictParamTypeRector::class,
         ]
     );
     $parameters->set(

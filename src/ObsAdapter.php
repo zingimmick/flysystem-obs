@@ -44,7 +44,7 @@ class ObsAdapter extends AbstractAdapter
     protected $bucket;
 
     /**
-     * @var array
+     * @var mixed[]
      */
     protected $options = [];
 
@@ -55,6 +55,7 @@ class ObsAdapter extends AbstractAdapter
 
     /**
      * @param string $prefix
+     * @param mixed[] $options
      */
     public function __construct(ObsClient $client, string $endpoint, string $bucket, $prefix = '', array $options = [])
     {
@@ -200,7 +201,7 @@ class ObsAdapter extends AbstractAdapter
                 'MetadataDirective' => ObsClient::CopyMetadata,
                 'ACL' => $this->getRawVisibility($path),
             ]);
-        } catch (ObsException $exception) {
+        } catch (ObsException $obsException) {
             return false;
         }
 
@@ -243,6 +244,7 @@ class ObsAdapter extends AbstractAdapter
         foreach ($files as $file) {
             $this->delete($file['type'] === 'file' ? $file['path'] : $file['path'] . '/');
         }
+
         $this->delete($dirname . '/');
         return ! $this->has($dirname);
     }
@@ -279,7 +281,7 @@ class ObsAdapter extends AbstractAdapter
                 'Key' => $this->applyPathPrefix($path),
                 'ACL' => $acl,
             ]);
-        } catch (ObsException $exception) {
+        } catch (ObsException $obsException) {
             return false;
         }
 
@@ -368,7 +370,7 @@ class ObsAdapter extends AbstractAdapter
         try {
             $contents = $this->getObject($path)
                 ->getContents();
-        } catch (ObsException $exception) {
+        } catch (ObsException $obsException) {
             return false;
         }
 
@@ -390,7 +392,7 @@ class ObsAdapter extends AbstractAdapter
         try {
             $stream = $this->getObject($path)
                 ->detach();
-        } catch (ObsException $exception) {
+        } catch (ObsException $obsException) {
             return false;
         }
 
@@ -429,6 +431,9 @@ class ObsAdapter extends AbstractAdapter
         return $list;
     }
 
+    /**
+     * @return array<string, mixed>|array<string, string>
+     */
     private function mapObjectMetadata($metadata, $path = null)
     {
         if ($path === null) {
@@ -467,7 +472,7 @@ class ObsAdapter extends AbstractAdapter
                 'Bucket' => $this->bucket,
                 'Key' => $path,
             ]);
-        } catch (ObsException $exception) {
+        } catch (ObsException $obsException) {
             return false;
         }
 
@@ -619,7 +624,7 @@ class ObsAdapter extends AbstractAdapter
                 'MaxKeys' => self::MAX_KEYS,
                 'Marker' => $nextMarker,
             ]);
-            if ($recursive === false) {
+            if (!$recursive) {
                 $model['Delimiter'] = self::DELIMITER;
             }
 
@@ -637,6 +642,9 @@ class ObsAdapter extends AbstractAdapter
         return $result;
     }
 
+    /**
+     * @return mixed[]
+     */
     private function processObjects(array $result, $objects, $dirname): array
     {
         $result['objects'] = [];
@@ -645,6 +653,7 @@ class ObsAdapter extends AbstractAdapter
                 if ($object['Key'] === $dirname) {
                     continue;
                 }
+
                 $result['objects'][] = array_merge($object, [
                     'Prefix' => $dirname,
                 ]);
@@ -654,6 +663,9 @@ class ObsAdapter extends AbstractAdapter
         return $result;
     }
 
+    /**
+     * @return mixed[]
+     */
     private function processPrefixes(array $result, $prefixes): array
     {
         if (! empty($prefixes)) {
@@ -689,7 +701,7 @@ class ObsAdapter extends AbstractAdapter
                 'Expires' => $expires,
                 'QueryParams' => $options,
             ]);
-        } catch (ObsException $exception) {
+        } catch (ObsException $obsException) {
             return false;
         }
 
