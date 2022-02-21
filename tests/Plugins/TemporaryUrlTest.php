@@ -19,6 +19,6 @@ class TemporaryUrlTest extends TestCase
             ->withArgs(['test', 10, [], 'GET'])->once()->andReturn('test-url');
         $filesystem = new Filesystem($adapter);
         $filesystem->addPlugin(new TemporaryUrl());
-        self::assertSame('test-url', $filesystem->getTemporaryUrl('test', 10));
+        static::assertSame('test-url', $filesystem->getTemporaryUrl('test', 10));
     }
 }

@@ -24,6 +24,6 @@ class SetBucketTest extends TestCase
         $filesystem = new Filesystem($adapter);
         $filesystem->addPlugin(new SetBucket());
         $filesystem->bucket('test');
-        self::assertSame('test', $adapter->getBucket());
+        static::assertSame('test', $adapter->getBucket());
     }
 }

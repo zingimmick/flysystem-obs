@@ -19,6 +19,6 @@ class FileUrlTest extends TestCase
             ->withArgs(['test'])->once()->andReturn('test-url');
         $filesystem = new Filesystem($adapter);
         $filesystem->addPlugin(new FileUrl());
-        self::assertSame('test-url', $filesystem->getUrl('test'));
+        static::assertSame('test-url', $filesystem->getUrl('test'));
     }
 }
