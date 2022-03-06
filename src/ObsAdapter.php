@@ -473,12 +473,11 @@ class ObsAdapter implements FilesystemAdapter
         while (true) {
             $options['Marker'] = $nextMarker;
 
+            /** @var array{Contents: array<array{Key: string|null, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>|null, CommonPrefixes: array<array<string, string>>|null, NextMarker: ?string} $model */
             $model = $this->client->listObjects($options);
 
             $nextMarker = $model['NextMarker'];
             $objects = $model['Contents'];
-
-            /** @var array<array<string, string>>|null $prefixes */
             $prefixes = $model['CommonPrefixes'];
             $result = $this->processObjects($result, $objects, $dirname);
             $result = $this->processPrefixes($result, $prefixes);
