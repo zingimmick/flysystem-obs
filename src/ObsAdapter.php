@@ -287,6 +287,7 @@ class ObsAdapter implements FilesystemAdapter
                 'Bucket' => $this->bucket,
                 'Prefix' => $prefix,
                 'Delimiter' => '/',
+                'MaxKeys' => 1,
             ];
             $model = $this->client->listObjects($options);
 
@@ -434,6 +435,7 @@ class ObsAdapter implements FilesystemAdapter
     protected function getObject(string $path): StreamInterface
     {
         try {
+            /** @var array{Body: \Psr\Http\Message\StreamInterface} $model */
             $model = $this->client->getObject([
                 'Bucket' => $this->bucket,
                 'Key' => $this->pathPrefixer->prefixPath($path),
@@ -471,6 +473,7 @@ class ObsAdapter implements FilesystemAdapter
         while (true) {
             $options['Marker'] = $nextMarker;
 
+            /** @var array{Contents: array<array{Key: string|null, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>|null, CommonPrefixes: array<array<string, string>>|null, NextMarker: ?string} $model */
             $model = $this->client->listObjects($options);
 
             $nextMarker = $model['NextMarker'];
@@ -595,6 +598,7 @@ class ObsAdapter implements FilesystemAdapter
     {
         $expires = $expiration instanceof DateTimeInterface ? $expiration->getTimestamp() - time() : $expiration;
 
+        /** @var array{SignedUrl: string} $model */
         $model = $this->client->createSignedUrl([
             'Method' => $method,
             'Bucket' => $this->bucket,
