@@ -133,7 +133,7 @@ final class MockAdapterTest extends TestCase
                 [
                     'Bucket' => 'test',
                     'Prefix' => 'path/',
-                    'Delimiter' => '/',
+                    'Delimiter' => '/', 'MaxKeys' => 1
                 ],
             ])->andReturn(
                 new Model([
@@ -1069,7 +1069,7 @@ final class MockAdapterTest extends TestCase
                 [
                     'Bucket' => 'test',
                     'Prefix' => 'fixture/exists-directory/',
-                    'Delimiter' => '/',
+                    'Delimiter' => '/', 'MaxKeys' => 1
                 ],
             ])->andReturn(new Model([
                 'ContentLength' => '302',
