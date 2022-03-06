@@ -435,7 +435,7 @@ class ObsAdapter implements FilesystemAdapter
     protected function getObject(string $path): StreamInterface
     {
         try {
-            /** @var array{Body: StreamInterface} $model */
+            /** @var array{Body: \Psr\Http\Message\StreamInterface} $model */
             $model = $this->client->getObject([
                 'Bucket' => $this->bucket,
                 'Key' => $this->pathPrefixer->prefixPath($path),
@@ -476,8 +476,8 @@ class ObsAdapter implements FilesystemAdapter
             $model = $this->client->listObjects($options);
 
             $nextMarker = $model['NextMarker'];
-            /** @var array<array{Key: string|null, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>|null, $objects */
             $objects = $model['Contents'];
+
             /** @var array<array<string, string>>|null $prefixes */
             $prefixes = $model['CommonPrefixes'];
             $result = $this->processObjects($result, $objects, $dirname);
