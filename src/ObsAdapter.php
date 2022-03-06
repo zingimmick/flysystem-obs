@@ -287,7 +287,7 @@ class ObsAdapter implements FilesystemAdapter
                 'Bucket' => $this->bucket,
                 'Prefix' => $prefix,
                 'Delimiter' => '/',
-                'MaxKeys'=>1
+                'MaxKeys' => 1,
             ];
             $model = $this->client->listObjects($options);
 
