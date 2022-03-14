@@ -303,7 +303,7 @@ class ObsAdapter extends AbstractAdapter
     {
         $defaultFile = trim($dirname, '/') . '/';
 
-        return $this->write($defaultFile, null, $config);
+        return $this->write($defaultFile, '', $config);
     }
 
     /**

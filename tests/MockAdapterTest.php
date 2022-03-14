@@ -6,6 +6,7 @@ namespace Zing\Flysystem\Obs\Tests;
 
 use League\Flysystem\AdapterInterface;
 use League\Flysystem\Config;
+use League\Flysystem\Util;
 use Obs\Internal\Common\Model;
 use Obs\ObsClient;
 use Obs\ObsException;
@@ -159,8 +160,7 @@ class MockAdapterTest extends TestCase
                 [
                     'Bucket' => 'test',
                     'Key' => 'path/',
-                    'Body' => null,
-                    'ContentType' => 'text/plain',
+                    'Body' => '',
                 ],
             ])->andReturn(new Model());
         $this->obsAdapter->createDir('path', new Config());
