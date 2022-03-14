@@ -438,11 +438,13 @@ class MockAdapterTest extends TestCase
             ->withArgs([
                 [
                     'Bucket' => 'test',
-                    'Objects' => [[
-                        'Key' => 'path/',
-                    ], [
-                        'Key' => 'path/file.txt',
-                    ]],
+                    'Objects' => [
+                        [
+                            'Key' => 'path/',
+                        ], [
+                            'Key' => 'path/file.txt',
+                        ],
+                    ],
                 ],
             ])->andReturn(new Model());
         static::assertTrue($this->obsAdapter->deleteDir('path'));
