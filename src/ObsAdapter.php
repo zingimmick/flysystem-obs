@@ -16,6 +16,7 @@ use League\Flysystem\StorageAttributes;
 use League\Flysystem\UnableToCheckDirectoryExistence;
 use League\Flysystem\UnableToCopyFile;
 use League\Flysystem\UnableToCreateDirectory;
+use League\Flysystem\UnableToDeleteDirectory;
 use League\Flysystem\UnableToDeleteFile;
 use League\Flysystem\UnableToMoveFile;
 use League\Flysystem\UnableToReadFile;
@@ -215,12 +216,24 @@ class ObsAdapter implements FilesystemAdapter
 
     public function deleteDirectory(string $path): void
     {
-        $files = $this->listContents($path, true);
-        foreach ($files as $file) {
-            $this->delete($file->isFile() ? $file->path() : $file->path() . '/');
+        $result = $this->listDirObjects($path, true);
+        $keys = array_column($result['objects'], 'Key');
+        if ($keys === []) {
+            return;
         }
 
-        $this->delete($path . '/');
+        try {
+            $this->client->deleteObjects([
+                'Bucket' => $this->bucket,
+                'Objects' => array_map(function ($key): array {
+                    return [
+                        'Key' => $key,
+                    ];
+                }, $keys),
+            ]);
+        } catch (ObsException $obsException) {
+            throw UnableToDeleteDirectory::atLocation($path, '', $obsException);
+        }
     }
 
     public function createDirectory(string $path, Config $config): void
@@ -320,10 +333,15 @@ class ObsAdapter implements FilesystemAdapter
      */
     public function listContents(string $path, bool $deep): iterable
     {
-        $directory = substr($path, -1) === '/' ? $path : $path . '/';
+        $directory = rtrim($path, '/');
         $result = $this->listDirObjects($directory, $deep);
 
         foreach ($result['objects'] as $files) {
+            $path = $this->pathPrefixer->stripDirectoryPrefix((string) ($files['Key'] ?? $files['Prefix']));
+            if ($path === $directory) {
+                continue;
+            }
+
             yield $this->mapObjectMetadata($files);
         }
 
@@ -501,11 +519,6 @@ class ObsAdapter implements FilesystemAdapter
         $result['objects'] = [];
         if (! empty($objects)) {
             foreach ($objects as $object) {
-                // Skip current folder
-                if ($object['Key'] === $dirname) {
-                    continue;
-                }
-
                 $object['Prefix'] = $dirname;
                 $result['objects'][] = $object;
             }

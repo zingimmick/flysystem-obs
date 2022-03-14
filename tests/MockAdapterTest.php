@@ -242,11 +242,15 @@ final class MockAdapterTest extends TestCase
                     'Reason' => 'OK',
                 ]
             ));
-        $this->legacyMock->shouldReceive('deleteObject')
+        $this->legacyMock->shouldReceive('deleteObjects')
             ->withArgs([
                 [
                     'Bucket' => 'test',
-                    'Key' => 'path/',
+                    'Objects' => [
+                        [
+                            'Key' => 'path/',
+                        ],
+                    ],
                 ],
             ]);
         $this->obsAdapter->createDirectory('path', new Config());
@@ -457,18 +461,18 @@ final class MockAdapterTest extends TestCase
                     'Key' => 'path',
                 ],
             ])->andThrow(new ObsException());
-        $this->legacyMock->shouldReceive('deleteObject')
+        $this->legacyMock->shouldReceive('deleteObjects')
             ->withArgs([
                 [
                     'Bucket' => 'test',
-                    'Key' => 'path/',
-                ],
-            ])->andReturn(new Model());
-        $this->legacyMock->shouldReceive('deleteObject')
-            ->withArgs([
-                [
-                    'Bucket' => 'test',
-                    'Key' => 'path/file.txt',
+                    'Objects' => [
+                        [
+                            'Key' => 'path/',
+                        ],
+                        [
+                            'Key' => 'path/file.txt',
+                        ],
+                    ],
                 ],
             ])->andReturn(new Model());
         $this->obsAdapter->deleteDirectory('path');

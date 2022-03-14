@@ -82,8 +82,16 @@ final class ValidAdapterTest extends TestCase
         $this->obsAdapter->createDirectory('fixture/path', new Config());
         self::assertTrue($this->obsAdapter->directoryExists('fixture/path'));
         self::assertSame([], iterator_to_array($this->obsAdapter->listContents('fixture/path', false)));
+        self::assertSame([], iterator_to_array($this->obsAdapter->listContents('fixture/path/', false)));
+        $this->obsAdapter->write('fixture/path1/file.txt', 'test', new Config());
+        $contents = iterator_to_array($this->obsAdapter->listContents('fixture/path1', false));
+        self::assertCount(1, $contents);
+        $file = $contents[0];
+        self::assertSame('fixture/path1/file.txt', $file['path']);
         $this->obsAdapter->deleteDirectory('fixture/path');
         self::assertFalse($this->obsAdapter->directoryExists('fixture/path'));
+        $this->obsAdapter->deleteDirectory('fixture/path1');
+        self::assertFalse($this->obsAdapter->directoryExists('fixture/path1'));
     }
 
     public function testDirectoryExists(): void
@@ -115,7 +123,7 @@ final class ValidAdapterTest extends TestCase
     public function testDeleteDir(): void
     {
         $this->obsAdapter->deleteDirectory('fixture');
-        self::assertEmpty(iterator_to_array($this->obsAdapter->listContents('fixture', false)));
+        self::assertFalse($this->obsAdapter->directoryExists('fixture'));
     }
 
     public function testWriteStream(): void
