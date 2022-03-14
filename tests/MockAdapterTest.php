@@ -6,7 +6,6 @@ namespace Zing\Flysystem\Obs\Tests;
 
 use League\Flysystem\AdapterInterface;
 use League\Flysystem\Config;
-use League\Flysystem\Util;
 use Obs\Internal\Common\Model;
 use Obs\ObsClient;
 use Obs\ObsException;
