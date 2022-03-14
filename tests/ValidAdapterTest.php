@@ -268,4 +268,16 @@ final class ValidAdapterTest extends TestCase
         self::assertSame(200, $info[0]);
         self::assertSame(100, $info[1]);
     }
+
+    public function testForceMimetype(): void
+    {
+        $this->obsAdapter->write('fixture/file.txt', 'test', new Config([
+            'mimetype' => 'image/png',
+        ]));
+        self::assertSame('image/png', $this->obsAdapter->mimeType('fixture/file.txt')->mimeType());
+        $this->obsAdapter->write('fixture/file2.txt', 'test', new Config([
+            'ContentType' => 'image/png',
+        ]));
+        self::assertSame('image/png', $this->obsAdapter->mimeType('fixture/file2.txt')->mimeType());
+    }
 }

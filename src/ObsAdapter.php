@@ -567,6 +567,10 @@ class ObsAdapter implements FilesystemAdapter
     protected function createOptionsFromConfig(Config $config): array
     {
         $options = $this->options;
+        $mimetype = $config->get('mimetype');
+        if ($mimetype) {
+            $options['ContentType'] = $mimetype;
+        }
 
         foreach (self::AVAILABLE_OPTIONS as $option) {
             $value = $config->get($option, '__NOT_SET__');
