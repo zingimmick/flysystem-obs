@@ -36,6 +36,7 @@ class MockAdapterTest extends TestCase
                     'Bucket' => 'test',
                     'Key' => 'fixture/read.txt',
                     'Body' => 'read-test',
+                    'ContentType' => 'text/plain',
                 ],
             ])->andReturn(new Model([]));
         $this->obsAdapter->write('fixture/read.txt', 'read-test', new Config());
@@ -49,6 +50,7 @@ class MockAdapterTest extends TestCase
                     'Bucket' => 'test',
                     'Key' => 'file.txt',
                     'Body' => 'update',
+                    'ContentType' => 'text/plain',
                 ],
             ])->andReturn(new Model());
         $this->obsAdapter->update('file.txt', 'update', new Config());
@@ -72,6 +74,7 @@ class MockAdapterTest extends TestCase
                     'Bucket' => 'test',
                     'Key' => 'file.txt',
                     'Body' => 'write',
+                    'ContentType' => 'text/plain',
                 ],
             ])->andReturn(new Model());
         $this->obsAdapter->write('file.txt', 'write', new Config());
@@ -81,6 +84,7 @@ class MockAdapterTest extends TestCase
                     'Bucket' => 'test',
                     'Key' => 'file.txt',
                     'Body' => 'update',
+                    'ContentType' => 'text/plain',
                 ],
             ])->andReturn(new Model());
         $this->obsAdapter->updateStream('file.txt', $this->streamFor('update')->detach(), new Config());
@@ -102,6 +106,7 @@ class MockAdapterTest extends TestCase
             'Bucket' => 'test',
             'Key' => $path,
             'Body' => $body,
+            'ContentType' => 'text/plain',
         ];
         if ($visibility !== null) {
             $arg = array_merge($arg, [
@@ -154,7 +159,7 @@ class MockAdapterTest extends TestCase
                 [
                     'Bucket' => 'test',
                     'Key' => 'path/',
-                    'Body' => null,
+                    'Body' => '',
                 ],
             ])->andReturn(new Model());
         $this->obsAdapter->createDir('path', new Config());
@@ -228,6 +233,7 @@ class MockAdapterTest extends TestCase
                     'Bucket' => 'test',
                     'Key' => 'file.txt',
                     'Body' => 'write',
+                    'ContentType' => 'text/plain',
                 ],
             ])->andReturn(new Model());
         $this->obsAdapter->write('file.txt', 'write', new Config());
@@ -545,6 +551,7 @@ class MockAdapterTest extends TestCase
                     'Bucket' => 'test',
                     'Key' => 'file.txt',
                     'Body' => 'write',
+                    'ContentType' => 'text/plain',
                 ],
             ])->andReturn(new Model());
         $this->obsAdapter->writeStream('file.txt', $this->streamFor('write')->detach(), new Config([

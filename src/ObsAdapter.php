@@ -8,6 +8,7 @@ use GuzzleHttp\Psr7\Uri;
 use League\Flysystem\Adapter\AbstractAdapter;
 use League\Flysystem\AdapterInterface;
 use League\Flysystem\Config;
+use League\Flysystem\Util;
 use Obs\ObsClient;
 use Obs\ObsException;
 
@@ -31,7 +32,20 @@ class ObsAdapter extends AbstractAdapter
     /**
      * @var string[]
      */
-    protected static $metaOptions = ['ACL', 'Expires', 'StorageClass'];
+    protected static $metaOptions = [
+        'ACL',
+        'StorageClass',
+        'ContentType',
+        'ContentLength',
+        'Metadata',
+        'WebsiteRedirectLocation',
+        'SseKms',
+        'SseKmsKey',
+        'SseC',
+        'SseCKey',
+        'Expires',
+        'SuccessRedirect',
+    ];
 
     /**
      * @var string
@@ -109,6 +123,22 @@ class ObsAdapter extends AbstractAdapter
         $path = $this->applyPathPrefix($path);
 
         $options = $this->getOptionsFromConfig($config);
+        if (! isset($options['ACL'])) {
+            /** @var string|null $visibility */
+            $visibility = $config->get('visibility');
+            if ($visibility !== null) {
+                $options['ACL'] = $options['ACL'] ?? ($visibility === self::VISIBILITY_PUBLIC ? ObsClient::AclPublicRead : ObsClient::AclPrivate);
+            }
+        }
+
+        $shouldDetermineMimetype = $contents !== '' && ! \array_key_exists('ContentType', $options);
+
+        if ($shouldDetermineMimetype) {
+            $mimeType = Util::guessMimeType($path, $contents);
+            if ($mimeType) {
+                $options['ContentType'] = $mimeType;
+            }
+        }
 
         try {
             $this->client->putObject(array_merge($options, [
@@ -273,7 +303,7 @@ class ObsAdapter extends AbstractAdapter
     {
         $defaultFile = trim($dirname, '/') . '/';
 
-        return $this->write($defaultFile, null, $config);
+        return $this->write($defaultFile, '', $config);
     }
 
     /**
@@ -724,11 +754,11 @@ class ObsAdapter extends AbstractAdapter
                 'Expires' => $expires,
                 'QueryParams' => $options,
             ]);
+
             return $model['SignedUrl'];
         } catch (ObsException $obsException) {
             return false;
         }
-
     }
 
     /**
