@@ -724,11 +724,11 @@ class ObsAdapter extends AbstractAdapter
                 'Expires' => $expires,
                 'QueryParams' => $options,
             ]);
+            return $model['SignedUrl'];
         } catch (ObsException $obsException) {
             return false;
         }
 
-        return $model['SignedUrl'];
     }
 
     /**
