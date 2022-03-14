@@ -434,18 +434,17 @@ class MockAdapterTest extends TestCase
                     'Key' => 'path',
                 ],
             ])->andThrow(new ObsException());
-        $this->client->shouldReceive('deleteObject')
+        $this->client->shouldReceive('deleteObjects')
             ->withArgs([
                 [
                     'Bucket' => 'test',
-                    'Key' => 'path/',
-                ],
-            ])->andReturn(new Model());
-        $this->client->shouldReceive('deleteObject')
-            ->withArgs([
-                [
-                    'Bucket' => 'test',
-                    'Key' => 'path/file.txt',
+                    'Objects' => [
+                        [
+                            'Key' => 'path/',
+                        ], [
+                            'Key' => 'path/file.txt',
+                        ],
+                    ],
                 ],
             ])->andReturn(new Model());
         static::assertTrue($this->obsAdapter->deleteDir('path'));

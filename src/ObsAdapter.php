@@ -240,14 +240,26 @@ class ObsAdapter extends AbstractAdapter
      */
     public function deleteDir($dirname)
     {
-        $files = $this->listContents($dirname, true);
-        foreach ($files as $file) {
-            $this->delete($file['type'] === 'file' ? $file['path'] : $file['path'] . '/');
+        $result = $this->listDirObjects($dirname, true);
+        $keys = array_column($result['objects'], 'Key');
+        if ($keys === []) {
+            return true;
         }
 
-        $this->delete($dirname . '/');
+        try {
+            $this->client->deleteObjects([
+                'Bucket' => $this->bucket,
+                'Objects' => array_map(function ($key): array {
+                    return [
+                        'Key' => $key,
+                    ];
+                }, $keys),
+            ]);
+        } catch (ObsException $obsException) {
+            return false;
+        }
 
-        return ! $this->has($dirname);
+        return true;
     }
 
     /**
@@ -414,12 +426,16 @@ class ObsAdapter extends AbstractAdapter
     public function listContents($directory = '', $recursive = false)
     {
         $list = [];
-        $directory = substr($directory, -1) === '/' ? $directory : $directory . '/';
+        $directory = rtrim($directory, '/');
         $result = $this->listDirObjects($directory, $recursive);
 
         foreach ($result['objects'] as $files) {
-            $metadata = $this->mapObjectMetadata($files);
-            $list[] = $metadata;
+            $path = $this->removePathPrefix(rtrim((string) ($files['Key'] ?? $files['Prefix']), '/'));
+            if ($path === $directory) {
+                continue;
+            }
+
+            $list[] = $this->mapObjectMetadata($files);
         }
 
         foreach ($result['prefix'] as $dir) {
@@ -616,6 +632,9 @@ class ObsAdapter extends AbstractAdapter
      */
     public function listDirObjects($dirname = '', $recursive = false)
     {
+        $prefix = trim($this->applyPathPrefix($dirname), '/');
+        $prefix = empty($prefix) ? '' : $prefix . '/';
+
         $nextMarker = '';
 
         $result = [];
@@ -623,8 +642,7 @@ class ObsAdapter extends AbstractAdapter
         while (true) {
             $model = $this->client->listObjects([
                 'Bucket' => $this->bucket,
-
-                'Prefix' => $dirname,
+                'Prefix' => $prefix,
                 'MaxKeys' => self::MAX_KEYS,
                 'Marker' => $nextMarker,
             ]);
@@ -657,10 +675,6 @@ class ObsAdapter extends AbstractAdapter
         $result['objects'] = [];
         if (! empty($objects)) {
             foreach ($objects as $object) {
-                if ($object['Key'] === $dirname) {
-                    continue;
-                }
-
                 $result['objects'][] = array_merge($object, [
                     'Prefix' => $dirname,
                 ]);

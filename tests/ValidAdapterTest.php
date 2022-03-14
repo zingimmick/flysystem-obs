@@ -87,7 +87,7 @@ class ValidAdapterTest extends TestCase
     public function testCreateDir(): void
     {
         $this->obsAdapter->createDir('fixture/path', new Config());
-        static::assertSame([], $this->obsAdapter->listContents('fixture/path'));
+        static::assertFalse($this->obsAdapter->has('fixture/path'));
     }
 
     public function testSetVisibility(): void
@@ -119,6 +119,12 @@ class ValidAdapterTest extends TestCase
     {
         static::assertTrue($this->obsAdapter->deleteDir('fixture'));
         static::assertEmpty($this->obsAdapter->listContents('fixture'));
+        static::assertSame([], $this->obsAdapter->listContents('fixture/path/'));
+        $this->obsAdapter->write('fixture/path1/file.txt', 'test', new Config());
+        $contents = $this->obsAdapter->listContents('fixture/path1');
+        static::assertCount(1, $contents);
+        $file = $contents[0];
+        static::assertSame('fixture/path1/file.txt', $file['path']);
     }
 
     public function testWriteStream(): void
