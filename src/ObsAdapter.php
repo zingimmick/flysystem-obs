@@ -25,6 +25,7 @@ use League\Flysystem\UnableToSetVisibility;
 use League\Flysystem\UnableToWriteFile;
 use League\MimeTypeDetection\FinfoMimeTypeDetector;
 use League\MimeTypeDetection\MimeTypeDetector;
+use League\Flysystem\Util;
 use Obs\ObsClient;
 use Obs\ObsException;
 use Psr\Http\Message\StreamInterface;
@@ -50,7 +51,20 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * @var string[]
      */
-    private const AVAILABLE_OPTIONS = ['ACL', 'Expires', 'StorageClass', 'ContentType'];
+    private const AVAILABLE_OPTIONS = [
+        'ACL',
+        'StorageClass',
+        'ContentType',
+        'ContentLength',
+        'Metadata',
+        'WebsiteRedirectLocation',
+        'SseKms',
+        'SseKmsKey',
+        'SseC',
+        'SseCKey',
+        'Expires',
+        'SuccessRedirect',
+    ];
 
     /**
      * @var string
