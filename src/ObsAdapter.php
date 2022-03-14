@@ -25,7 +25,6 @@ use League\Flysystem\UnableToSetVisibility;
 use League\Flysystem\UnableToWriteFile;
 use League\MimeTypeDetection\FinfoMimeTypeDetector;
 use League\MimeTypeDetection\MimeTypeDetector;
-use League\Flysystem\Util;
 use Obs\ObsClient;
 use Obs\ObsException;
 use Psr\Http\Message\StreamInterface;
