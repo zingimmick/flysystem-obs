@@ -277,14 +277,16 @@ class ObsAdapter extends AbstractAdapter
         }
 
         try {
-            $this->client->deleteObjects([
-                'Bucket' => $this->bucket,
-                'Objects' => array_map(function ($key): array {
-                    return [
-                        'Key' => $key,
-                    ];
-                }, $keys),
-            ]);
+            foreach (array_chunk($keys, 1000) as $items) {
+                $this->client->deleteObjects([
+                    'Bucket' => $this->bucket,
+                    'Objects' => array_map(function ($key): array {
+                        return [
+                            'Key' => $key,
+                        ];
+                    }, $items),
+                ]);
+            }
         } catch (ObsException $obsException) {
             return false;
         }
