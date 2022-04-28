@@ -15,9 +15,9 @@ use Zing\Flysystem\Obs\ObsAdapter;
 class MockAdapterTest extends TestCase
 {
     /**
-     * @var \Mockery\LegacyMockInterface|\Mockery\MockInterface|\Obs\ObsClient
+     * @var \Mockery\LegacyMockInterface
      */
-    private $client;
+    private $legacyMock;
 
     /**
      * @var \Zing\Flysystem\Obs\ObsAdapter
@@ -28,9 +28,9 @@ class MockAdapterTest extends TestCase
     {
         parent::setUp();
 
-        $this->client = \Mockery::mock(ObsClient::class);
-        $this->obsAdapter = new ObsAdapter($this->client, 'obs.cn-east-3.myhuaweicloud.com', 'test');
-        $this->client->shouldReceive('putObject')
+        $this->legacyMock = \Mockery::mock(ObsClient::class);
+        $this->obsAdapter = new ObsAdapter($this->legacyMock, 'obs.cn-east-3.myhuaweicloud.com', 'test');
+        $this->legacyMock->shouldReceive('putObject')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -44,7 +44,7 @@ class MockAdapterTest extends TestCase
 
     public function testUpdate(): void
     {
-        $this->client->shouldReceive('putObject')
+        $this->legacyMock->shouldReceive('putObject')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -54,7 +54,7 @@ class MockAdapterTest extends TestCase
                 ],
             ])->andReturn(new Model());
         $this->obsAdapter->update('file.txt', 'update', new Config());
-        $this->client->shouldReceive('getObject')
+        $this->legacyMock->shouldReceive('getObject')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -68,7 +68,7 @@ class MockAdapterTest extends TestCase
 
     public function testUpdateStream(): void
     {
-        $this->client->shouldReceive('putObject')
+        $this->legacyMock->shouldReceive('putObject')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -78,7 +78,7 @@ class MockAdapterTest extends TestCase
                 ],
             ])->andReturn(new Model());
         $this->obsAdapter->write('file.txt', 'write', new Config());
-        $this->client->shouldReceive('putObject')
+        $this->legacyMock->shouldReceive('putObject')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -88,7 +88,7 @@ class MockAdapterTest extends TestCase
                 ],
             ])->andReturn(new Model());
         $this->obsAdapter->updateStream('file.txt', $this->streamFor('update')->detach(), new Config());
-        $this->client->shouldReceive('getObject')
+        $this->legacyMock->shouldReceive('getObject')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -115,7 +115,7 @@ class MockAdapterTest extends TestCase
             ]);
         }
 
-        $this->client->shouldReceive('putObject')
+        $this->legacyMock->shouldReceive('putObject')
             ->withArgs([$arg])->andReturn(new Model());
     }
 
@@ -123,7 +123,7 @@ class MockAdapterTest extends TestCase
     {
         $this->mockPutObject('file.txt', 'write');
         $this->obsAdapter->write('file.txt', 'write', new Config());
-        $this->client->shouldReceive('copyObject')
+        $this->legacyMock->shouldReceive('copyObject')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -141,7 +141,7 @@ class MockAdapterTest extends TestCase
 
     private function mockGetObject($path, $body): void
     {
-        $this->client->shouldReceive('getObject')
+        $this->legacyMock->shouldReceive('getObject')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -154,7 +154,7 @@ class MockAdapterTest extends TestCase
 
     public function testCreateDir(): void
     {
-        $this->client->shouldReceive('putObject')
+        $this->legacyMock->shouldReceive('putObject')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -163,7 +163,7 @@ class MockAdapterTest extends TestCase
                 ],
             ])->andReturn(new Model());
         $this->obsAdapter->createDir('path', new Config());
-        $this->client->shouldReceive('listObjects')
+        $this->legacyMock->shouldReceive('listObjects')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -187,7 +187,7 @@ class MockAdapterTest extends TestCase
                     ],
                 ],
             ]));
-        $this->client->shouldReceive('getObjectMetadata')
+        $this->legacyMock->shouldReceive('getObjectMetadata')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -227,7 +227,7 @@ class MockAdapterTest extends TestCase
 
     public function testSetVisibility(): void
     {
-        $this->client->shouldReceive('putObject')
+        $this->legacyMock->shouldReceive('putObject')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -237,7 +237,7 @@ class MockAdapterTest extends TestCase
                 ],
             ])->andReturn(new Model());
         $this->obsAdapter->write('file.txt', 'write', new Config());
-        $this->client->shouldReceive('getObjectAcl')
+        $this->legacyMock->shouldReceive('getObjectAcl')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -303,7 +303,7 @@ class MockAdapterTest extends TestCase
             AdapterInterface::VISIBILITY_PRIVATE,
             $this->obsAdapter->getVisibility('file.txt')['visibility']
         );
-        $this->client->shouldReceive('setObjectAcl')
+        $this->legacyMock->shouldReceive('setObjectAcl')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -333,7 +333,7 @@ class MockAdapterTest extends TestCase
         $this->obsAdapter->write('from.txt', 'write', new Config());
         $this->mockGetMetadata('from.txt');
         static::assertTrue((bool) $this->obsAdapter->has('from.txt'));
-        $this->client->shouldReceive('getObjectMetadata')
+        $this->legacyMock->shouldReceive('getObjectMetadata')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -341,7 +341,7 @@ class MockAdapterTest extends TestCase
                 ],
             ])->andThrow(new ObsException());
         static::assertFalse((bool) $this->obsAdapter->has('to.txt'));
-        $this->client->shouldReceive('copyObject')
+        $this->legacyMock->shouldReceive('copyObject')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -351,7 +351,7 @@ class MockAdapterTest extends TestCase
                     'ACL' => 'public',
                 ],
             ])->andReturn(new Model());
-        $this->client->shouldReceive('deleteObject')
+        $this->legacyMock->shouldReceive('deleteObject')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -360,7 +360,7 @@ class MockAdapterTest extends TestCase
             ])->andReturn(new Model());
         $this->mockGetVisibility('from.txt', Visibility::PUBLIC);
         $this->obsAdapter->rename('from.txt', 'to.txt');
-        $this->client->shouldReceive('getObjectMetadata')
+        $this->legacyMock->shouldReceive('getObjectMetadata')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -370,7 +370,7 @@ class MockAdapterTest extends TestCase
         static::assertFalse((bool) $this->obsAdapter->has('from.txt'));
         $this->mockGetObject('to.txt', 'write');
         static::assertSame('write', $this->obsAdapter->read('to.txt')['contents']);
-        $this->client->shouldReceive('deleteObject')
+        $this->legacyMock->shouldReceive('deleteObject')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -382,7 +382,7 @@ class MockAdapterTest extends TestCase
 
     public function testDeleteDir(): void
     {
-        $this->client->shouldReceive('listObjects')
+        $this->legacyMock->shouldReceive('listObjects')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -433,14 +433,14 @@ class MockAdapterTest extends TestCase
             ]));
         $this->mockGetMetadata('path/');
         $this->mockGetMetadata('path/file.txt');
-        $this->client->shouldReceive('getObjectMetadata')
+        $this->legacyMock->shouldReceive('getObjectMetadata')
             ->withArgs([
                 [
                     'Bucket' => 'test',
                     'Key' => 'path',
                 ],
             ])->andThrow(new ObsException());
-        $this->client->shouldReceive('deleteObjects')
+        $this->legacyMock->shouldReceive('deleteObjects')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -518,7 +518,7 @@ class MockAdapterTest extends TestCase
             'Reason' => 'OK',
         ]);
 
-        $this->client->shouldReceive('getObjectAcl')
+        $this->legacyMock->shouldReceive('getObjectAcl')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -545,7 +545,7 @@ class MockAdapterTest extends TestCase
 
     public function testWriteStreamWithExpires(): void
     {
-        $this->client->shouldReceive('putObject')
+        $this->legacyMock->shouldReceive('putObject')
             ->withArgs([
                 [
                     'Expires' => 20,
@@ -564,7 +564,7 @@ class MockAdapterTest extends TestCase
 
     public function testWriteStreamWithMimetype(): void
     {
-        $this->client->shouldReceive('putObject')
+        $this->legacyMock->shouldReceive('putObject')
             ->withArgs([
                 [
                     'mimetype' => 'image/png',
@@ -577,7 +577,7 @@ class MockAdapterTest extends TestCase
         $this->obsAdapter->writeStream('file.txt', $this->streamFor('write')->detach(), new Config([
             'mimetype' => 'image/png',
         ]));
-        $this->client->shouldReceive('getObjectMetadata')
+        $this->legacyMock->shouldReceive('getObjectMetadata')
             ->once()
             ->withArgs([
                 [
@@ -620,7 +620,7 @@ class MockAdapterTest extends TestCase
         $this->obsAdapter->writeStream('file.txt', $this->streamFor('write')->detach(), new Config());
         $this->mockGetMetadata('file.txt');
         static::assertTrue((bool) $this->obsAdapter->has('file.txt'));
-        $this->client->shouldReceive('deleteObject')
+        $this->legacyMock->shouldReceive('deleteObject')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -628,7 +628,7 @@ class MockAdapterTest extends TestCase
                 ],
             ])->andReturn(new Model());
         $this->obsAdapter->delete('file.txt');
-        $this->client->shouldReceive('getObjectMetadata')
+        $this->legacyMock->shouldReceive('getObjectMetadata')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -648,7 +648,7 @@ class MockAdapterTest extends TestCase
 
     public function testRead(): void
     {
-        $this->client->shouldReceive('getObject')
+        $this->legacyMock->shouldReceive('getObject')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -662,7 +662,7 @@ class MockAdapterTest extends TestCase
 
     public function testReadStream(): void
     {
-        $this->client->shouldReceive('getObject')
+        $this->legacyMock->shouldReceive('getObject')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -679,7 +679,7 @@ class MockAdapterTest extends TestCase
 
     public function testGetVisibility(): void
     {
-        $this->client->shouldReceive('getObjectAcl')
+        $this->legacyMock->shouldReceive('getObjectAcl')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -724,7 +724,7 @@ class MockAdapterTest extends TestCase
 
     private function mockGetMetadata($path): void
     {
-        $this->client->shouldReceive('getObjectMetadata')
+        $this->legacyMock->shouldReceive('getObjectMetadata')
             ->once()
             ->withArgs([
                 [
@@ -762,7 +762,7 @@ class MockAdapterTest extends TestCase
 
     public function testListContents(): void
     {
-        $this->client->shouldReceive('listObjects')
+        $this->legacyMock->shouldReceive('listObjects')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -803,7 +803,7 @@ class MockAdapterTest extends TestCase
                     'Reason' => 'OK',
                 ])
             );
-        $this->client->shouldReceive('getObjectMetadata')
+        $this->legacyMock->shouldReceive('getObjectMetadata')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -839,7 +839,7 @@ class MockAdapterTest extends TestCase
                 ]
             ));
         static::assertNotEmpty($this->obsAdapter->listContents('path'));
-        $this->client->shouldReceive('listObjects')
+        $this->legacyMock->shouldReceive('listObjects')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -854,7 +854,7 @@ class MockAdapterTest extends TestCase
         static::assertEmpty($this->obsAdapter->listContents('path1'));
         $this->mockPutObject('a/b/file.txt', 'test');
         $this->obsAdapter->write('a/b/file.txt', 'test', new Config());
-        $this->client->shouldReceive('listObjects')
+        $this->legacyMock->shouldReceive('listObjects')
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -939,7 +939,7 @@ class MockAdapterTest extends TestCase
 
     public function testSignUrl(): void
     {
-        $this->client->shouldReceive('createSignedUrl')
+        $this->legacyMock->shouldReceive('createSignedUrl')
             ->withArgs([
                 [
                     'Method' => 'GET',
@@ -956,7 +956,7 @@ class MockAdapterTest extends TestCase
 
     public function testGetTemporaryUrl(): void
     {
-        $this->client->shouldReceive('createSignedUrl')
+        $this->legacyMock->shouldReceive('createSignedUrl')
             ->withArgs([
                 [
                     'Method' => 'GET',
