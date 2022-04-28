@@ -23,7 +23,7 @@ use Zing\Flysystem\Obs\ObsAdapter;
 final class MockAdapterTest extends TestCase
 {
     /**
-     * @var \Mockery\LegacyMockInterface
+     * @var \Mockery\MockInterface&\Obs\ObsClient
      */
     private $legacyMock;
 
