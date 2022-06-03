@@ -257,7 +257,7 @@ class ValidAdapterTest extends TestCase
     {
         $this->obsAdapter->write(
             'fixture/image.png',
-            file_get_contents('https://via.placeholder.com/640x480.png'),
+            file_get_contents('https://avatars.githubusercontent.com/u/26657141'),
             new Config()
         );
         $info = getimagesize($this->obsAdapter->signUrl('fixture/image.png', 10, [
