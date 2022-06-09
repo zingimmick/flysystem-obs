@@ -254,7 +254,7 @@ final class ValidAdapterTest extends TestCase
 
     public function testImage(): void
     {
-        $contents = file_get_contents('https://via.placeholder.com/640x480.png');
+        $contents = file_get_contents('https://avatars.githubusercontent.com/u/26657141');
         if ($contents === false) {
             self::markTestSkipped('Require image contents');
         }
