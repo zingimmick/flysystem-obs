@@ -3,6 +3,11 @@
     "description": "OBS filesystem adapter for Flysystem.",
     "keywords": ["obs", "flysystem", "filesystem", "storage", "file", "files"],
     "license": "MIT",
+    "homepage": "https://github.com/zingimmick/flysystem-obs",
+    "support": {
+        "issues": "https://github.com/zingimmick/flysystem-obs/issues",
+        "source": "https://github.com/zingimmick/flysystem-obs"
+    },
     "authors": [
         {
             "name": "zingimmick",
