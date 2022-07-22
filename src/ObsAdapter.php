@@ -178,7 +178,7 @@ class ObsAdapter implements FilesystemAdapter
                 'Body' => $contents,
             ]));
         } catch (ObsException $obsException) {
-            throw UnableToWriteFile::atLocation($path, '', $obsException);
+            throw UnableToWriteFile::atLocation($path, $obsException->getMessage(), $obsException);
         }
     }
 
@@ -223,7 +223,7 @@ class ObsAdapter implements FilesystemAdapter
                 'Key' => $this->pathPrefixer->prefixPath($path),
             ]);
         } catch (ObsException $obsException) {
-            throw UnableToDeleteFile::atLocation($path, '', $obsException);
+            throw UnableToDeleteFile::atLocation($path, $obsException->getMessage(), $obsException);
         }
     }
 
@@ -247,7 +247,7 @@ class ObsAdapter implements FilesystemAdapter
                 ]);
             }
         } catch (ObsException $obsException) {
-            throw UnableToDeleteDirectory::atLocation($path, '', $obsException);
+            throw UnableToDeleteDirectory::atLocation($path, $obsException->getMessage(), $obsException);
         }
     }
 
@@ -274,7 +274,7 @@ class ObsAdapter implements FilesystemAdapter
                 'ACL' => $this->visibilityConverter->visibilityToAcl($visibility),
             ]);
         } catch (ObsException $obsException) {
-            throw UnableToSetVisibility::atLocation($path, '', $obsException);
+            throw UnableToSetVisibility::atLocation($path, $obsException->getMessage(), $obsException);
         }
     }
 
@@ -288,7 +288,7 @@ class ObsAdapter implements FilesystemAdapter
                 ]
             );
         } catch (ObsException $obsException) {
-            throw UnableToRetrieveMetadata::visibility($path, '', $obsException);
+            throw UnableToRetrieveMetadata::visibility($path, $obsException->getMessage(), $obsException);
         }
 
         $visibility = $this->visibilityConverter->aclToVisibility((array) $result->get('Grants'));
@@ -376,7 +376,7 @@ class ObsAdapter implements FilesystemAdapter
                 'Key' => $this->pathPrefixer->prefixPath($path),
             ]);
         } catch (ObsException $obsException) {
-            throw UnableToRetrieveMetadata::create($path, $type, '', $obsException);
+            throw UnableToRetrieveMetadata::create($path, $type, $obsException->getMessage(), $obsException);
         }
 
         $attributes = $this->mapObjectMetadata($metadata->toArray(), $path);
@@ -476,7 +476,7 @@ class ObsAdapter implements FilesystemAdapter
 
             return $model['Body'];
         } catch (ObsException $obsException) {
-            throw UnableToReadFile::fromLocation($path, '', $obsException);
+            throw UnableToReadFile::fromLocation($path, $obsException->getMessage(), $obsException);
         }
     }
 
