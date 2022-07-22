@@ -9,8 +9,8 @@ use RuntimeException;
 
 class UnableToGetUrl extends RuntimeException implements FilesystemException
 {
-    public static function missingOption(string $option, string $reason = ''): self
+    public static function missingOption(string $option): self
     {
-        return new self(sprintf('Unable to get url with option %s missing.' . "\nreason: {$reason}", $option));
+        return new self(sprintf('Unable to get url with option %s missing.', $option));
     }
 }
