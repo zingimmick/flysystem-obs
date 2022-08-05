@@ -40,7 +40,7 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * @var string
      */
-    private const DELIMITER = '/';
+    private const DELIMITER = '/' ;
 
     /**
      * @var int
