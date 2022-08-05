@@ -239,7 +239,7 @@ class ObsAdapter implements FilesystemAdapter
             foreach (array_chunk($keys, 1000) as $items) {
                 $this->client->deleteObjects([
                     'Bucket' => $this->bucket,
-                    'Objects' => array_map(function ($key): array {
+                    'Objects' => array_map(static function ($key): array {
                         return [
                             'Key' => $key,
                         ];
