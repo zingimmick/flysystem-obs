@@ -6,6 +6,7 @@ namespace Zing\Flysystem\Obs\Tests;
 
 use GuzzleHttp\Psr7\Utils;
 use PHPUnit\Framework\TestCase as BaseTestCase;
+
 use function GuzzleHttp\Psr7\stream_for;
 
 abstract class TestCase extends BaseTestCase
