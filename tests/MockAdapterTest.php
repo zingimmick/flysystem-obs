@@ -1142,4 +1142,100 @@ final class MockAdapterTest extends TestCase
         $this->obsAdapter->createDirectory('fixture/exists-directory', new Config());
         self::assertTrue($this->obsAdapter->directoryExists('fixture/exists-directory'));
     }
+
+    public function testMovingAFileWithVisibility(): void
+    {
+        $this->mockPutObject('source.txt', 'contents to be copied', Visibility::PUBLIC);
+        $this->legacyMock->shouldReceive('copyObject')
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'destination.txt',
+                    'CopySource' => 'test/source.txt',
+                    'MetadataDirective' => 'COPY',
+                    'ACL' => 'private',
+                ],
+            ]);
+        $this->legacyMock->shouldReceive('deleteObject')
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'source.txt',
+                ],
+            ]);
+        $this->legacyMock->shouldReceive('getObjectMetadata')
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'source.txt',
+                ],
+            ])->andThrow(new ObsException());
+        $this->mockGetMetadata('destination.txt');
+        $this->mockGetVisibility('destination.txt', Visibility::PRIVATE);
+        $this->mockGetObject('destination.txt', 'contents to be copied');
+        $adapter = $this->obsAdapter;
+        $adapter->write(
+            'source.txt',
+            'contents to be copied',
+            new Config([
+                Config::OPTION_VISIBILITY => Visibility::PUBLIC,
+            ])
+        );
+        $adapter->move('source.txt', 'destination.txt', new Config([
+            Config::OPTION_VISIBILITY => Visibility::PRIVATE,
+        ]));
+        self::assertFalse(
+            $adapter->fileExists('source.txt'),
+            'After moving a file should no longer exist in the original location.'
+        );
+        self::assertTrue(
+            $adapter->fileExists('destination.txt'),
+            'After moving, a file should be present at the new location.'
+        );
+        self::assertSame(Visibility::PRIVATE, $adapter->visibility('destination.txt')->visibility());
+        self::assertSame('contents to be copied', $adapter->read('destination.txt'));
+    }
+
+    public function testCopyingAFileWithVisibility(): void
+    {
+        $this->mockPutObject('source.txt', 'contents to be copied', Visibility::PUBLIC);
+        $this->legacyMock->shouldReceive('copyObject')
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'destination.txt',
+                    'CopySource' => 'test/source.txt',
+                    'MetadataDirective' => 'COPY',
+                    'ACL' => 'private',
+                ],
+            ]);
+        $this->legacyMock->shouldReceive('deleteObject')
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'source.txt',
+                ],
+            ]);
+        $this->mockGetMetadata('source.txt');
+        $this->mockGetMetadata('destination.txt');
+        $this->mockGetVisibility('destination.txt', Visibility::PRIVATE);
+        $this->mockGetObject('destination.txt', 'contents to be copied');
+        $adapter = $this->obsAdapter;
+        $adapter->write(
+            'source.txt',
+            'contents to be copied',
+            new Config([
+                Config::OPTION_VISIBILITY => Visibility::PUBLIC,
+            ])
+        );
+
+        $adapter->copy('source.txt', 'destination.txt', new Config([
+            Config::OPTION_VISIBILITY => Visibility::PRIVATE,
+        ]));
+
+        self::assertTrue($adapter->fileExists('source.txt'));
+        self::assertTrue($adapter->fileExists('destination.txt'));
+        self::assertSame(Visibility::PRIVATE, $adapter->visibility('destination.txt')->visibility());
+        self::assertSame('contents to be copied', $adapter->read('destination.txt'));
+    }
 }

@@ -196,7 +196,7 @@ class ObsAdapter implements FilesystemAdapter
     {
         try {
             /** @var string $visibility */
-            $visibility = $this->visibility($source)
+            $visibility = $config->get(Config::OPTION_VISIBILITY) ?: $this->visibility($source)
                 ->visibility();
         } catch (FilesystemOperationFailed $filesystemOperationFailed) {
             throw UnableToCopyFile::fromLocationTo($source, $destination, $filesystemOperationFailed);

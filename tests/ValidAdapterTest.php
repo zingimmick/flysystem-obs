@@ -281,4 +281,50 @@ final class ValidAdapterTest extends TestCase
         ]));
         self::assertSame('image/png', $this->obsAdapter->mimeType('fixture/file2.txt')->mimeType());
     }
+
+    public function testMovingAFileWithVisibility(): void
+    {
+        $adapter = $this->obsAdapter;
+        $adapter->write(
+            'source.txt',
+            'contents to be copied',
+            new Config([
+                Config::OPTION_VISIBILITY => Visibility::PUBLIC,
+            ])
+        );
+        $adapter->move('source.txt', 'destination.txt', new Config([
+            Config::OPTION_VISIBILITY => Visibility::PRIVATE,
+        ]));
+        self::assertFalse(
+            $adapter->fileExists('source.txt'),
+            'After moving a file should no longer exist in the original location.'
+        );
+        self::assertTrue(
+            $adapter->fileExists('destination.txt'),
+            'After moving, a file should be present at the new location.'
+        );
+        self::assertSame(Visibility::PRIVATE, $adapter->visibility('destination.txt')->visibility());
+        self::assertSame('contents to be copied', $adapter->read('destination.txt'));
+    }
+
+    public function testCopyingAFileWithVisibility(): void
+    {
+        $adapter = $this->obsAdapter;
+        $adapter->write(
+            'source.txt',
+            'contents to be copied',
+            new Config([
+                Config::OPTION_VISIBILITY => Visibility::PUBLIC,
+            ])
+        );
+
+        $adapter->copy('source.txt', 'destination.txt', new Config([
+            Config::OPTION_VISIBILITY => Visibility::PRIVATE,
+        ]));
+
+        self::assertTrue($adapter->fileExists('source.txt'));
+        self::assertTrue($adapter->fileExists('destination.txt'));
+        self::assertSame(Visibility::PRIVATE, $adapter->visibility('destination.txt')->visibility());
+        self::assertSame('contents to be copied', $adapter->read('destination.txt'));
+    }
 }
