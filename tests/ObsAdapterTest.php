@@ -29,10 +29,7 @@ final class ObsAdapterTest extends FilesystemAdapterTestCase
         return new ObsAdapter(new ObsClient($config), (string) getenv('HUAWEI_CLOUD_BUCKET') ?: '', 'github-test');
     }
 
-    /**
-     * @var \League\Flysystem\FilesystemAdapter
-     */
-    private $filesystemAdapter;
+    private \League\Flysystem\FilesystemAdapter $filesystemAdapter;
 
     protected function setUp(): void
     {

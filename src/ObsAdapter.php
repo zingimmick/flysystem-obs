@@ -65,54 +65,29 @@ class ObsAdapter implements FilesystemAdapter
         'SuccessRedirect',
     ];
 
-    /**
-     * @var string
-     */
-    protected $bucket;
+    private \League\Flysystem\PathPrefixer $pathPrefixer;
 
-    /**
-     * @var mixed[]|array<string, bool>|array<string, string>
-     * @phpstan-var array{url?: string, temporary_url?: string, endpoint?: string, bucket_endpoint?: bool}
-     */
-    protected $options = [];
+    private \Zing\Flysystem\Obs\PortableVisibilityConverter|\Zing\Flysystem\Obs\VisibilityConverter $visibilityConverter;
 
-    /**
-     * @var \Obs\ObsClient
-     */
-    protected $client;
-
-    /**
-     * @var \League\Flysystem\PathPrefixer
-     */
-    private $pathPrefixer;
-
-    /**
-     * @var \Zing\Flysystem\Obs\PortableVisibilityConverter|\Zing\Flysystem\Obs\VisibilityConverter
-     */
-    private $visibilityConverter;
-
-    /**
-     * @var \League\MimeTypeDetection\FinfoMimeTypeDetector|\League\MimeTypeDetection\MimeTypeDetector
-     */
-    private $mimeTypeDetector;
+    private \League\MimeTypeDetection\FinfoMimeTypeDetector|\League\MimeTypeDetection\MimeTypeDetector $mimeTypeDetector;
 
     /**
      * @param array{url?: string, temporary_url?: string, endpoint?: string, bucket_endpoint?: bool} $options
      */
     public function __construct(
-        ObsClient $client,
-        string $bucket,
+        protected ObsClient $obsClient,
+        protected string $bucket,
         string $prefix = '',
         ?VisibilityConverter $visibility = null,
         ?MimeTypeDetector $mimeTypeDetector = null,
-        array $options = []
+        /**
+         * @phpstan-var array{url?: string, temporary_url?: string, endpoint?: string, bucket_endpoint?: bool}
+         */
+        protected array $options = []
     ) {
-        $this->client = $client;
-        $this->bucket = $bucket;
         $this->pathPrefixer = new PathPrefixer($prefix);
         $this->visibilityConverter = $visibility ?: new PortableVisibilityConverter();
         $this->mimeTypeDetector = $mimeTypeDetector ?: new FinfoMimeTypeDetector();
-        $this->options = $options;
     }
 
     public function getBucket(): string
@@ -122,7 +97,7 @@ class ObsAdapter implements FilesystemAdapter
 
     public function getClient(): ObsClient
     {
-        return $this->client;
+        return $this->obsClient;
     }
 
     public function write(string $path, string $contents, Config $config): void
@@ -158,7 +133,7 @@ class ObsAdapter implements FilesystemAdapter
             /** @var string|null $visibility */
             $visibility = $config->get(Config::OPTION_VISIBILITY);
             if ($visibility !== null) {
-                $options['ACL'] = $options['ACL'] ?? $this->visibilityConverter->visibilityToAcl($visibility);
+                $options['ACL'] ??= $this->visibilityConverter->visibilityToAcl($visibility);
             }
         }
 
@@ -172,7 +147,7 @@ class ObsAdapter implements FilesystemAdapter
         }
 
         try {
-            $this->client->putObject(array_merge($options, [
+            $this->obsClient->putObject(array_merge($options, [
                 'Bucket' => $this->bucket,
                 'Key' => $this->pathPrefixer->prefixPath($path),
                 'Body' => $contents,
@@ -187,7 +162,7 @@ class ObsAdapter implements FilesystemAdapter
         try {
             $this->copy($source, $destination, $config);
             $this->delete($source);
-        } catch (FilesystemOperationFailed $filesystemOperationFailed) {
+        } catch (FilesystemOperationFailed) {
             throw UnableToMoveFile::fromLocationTo($source, $destination);
         }
     }
@@ -203,7 +178,7 @@ class ObsAdapter implements FilesystemAdapter
         }
 
         try {
-            $this->client->copyObject(array_merge($this->createOptionsFromConfig($config), [
+            $this->obsClient->copyObject(array_merge($this->createOptionsFromConfig($config), [
                 'Bucket' => $this->bucket,
                 'Key' => $this->pathPrefixer->prefixPath($destination),
                 'CopySource' => $this->bucket . '/' . $this->pathPrefixer->prefixPath($source),
@@ -218,7 +193,7 @@ class ObsAdapter implements FilesystemAdapter
     public function delete(string $path): void
     {
         try {
-            $this->client->deleteObject([
+            $this->obsClient->deleteObject([
                 'Bucket' => $this->bucket,
                 'Key' => $this->pathPrefixer->prefixPath($path),
             ]);
@@ -237,13 +212,11 @@ class ObsAdapter implements FilesystemAdapter
 
         try {
             foreach (array_chunk($keys, 1000) as $items) {
-                $this->client->deleteObjects([
+                $this->obsClient->deleteObjects([
                     'Bucket' => $this->bucket,
-                    'Objects' => array_map(static function ($key): array {
-                        return [
-                            'Key' => $key,
-                        ];
-                    }, $items),
+                    'Objects' => array_map(static fn ($key): array => [
+                        'Key' => $key,
+                    ], $items),
                 ]);
             }
         } catch (ObsException $obsException) {
@@ -268,7 +241,7 @@ class ObsAdapter implements FilesystemAdapter
     public function setVisibility(string $path, string $visibility): void
     {
         try {
-            $this->client->setObjectAcl([
+            $this->obsClient->setObjectAcl([
                 'Bucket' => $this->bucket,
                 'Key' => $this->pathPrefixer->prefixPath($path),
                 'ACL' => $this->visibilityConverter->visibilityToAcl($visibility),
@@ -281,7 +254,7 @@ class ObsAdapter implements FilesystemAdapter
     public function visibility(string $path): FileAttributes
     {
         try {
-            $result = $this->client->getObjectAcl(
+            $result = $this->obsClient->getObjectAcl(
                 [
                     'Bucket' => $this->bucket,
                     'Key' => $this->pathPrefixer->prefixPath($path),
@@ -300,7 +273,7 @@ class ObsAdapter implements FilesystemAdapter
     {
         try {
             $this->getMetadata($path, FileAttributes::ATTRIBUTE_PATH);
-        } catch (FilesystemOperationFailed $filesystemOperationFailed) {
+        } catch (FilesystemOperationFailed) {
             return false;
         }
 
@@ -317,7 +290,7 @@ class ObsAdapter implements FilesystemAdapter
                 'Delimiter' => '/',
                 'MaxKeys' => 1,
             ];
-            $model = $this->client->listObjects($options);
+            $model = $this->obsClient->listObjects($options);
 
             return $model['Contents'] !== [];
         } catch (ObsException $obsException) {
@@ -371,7 +344,7 @@ class ObsAdapter implements FilesystemAdapter
     private function getMetadata(string $path, string $type): FileAttributes
     {
         try {
-            $metadata = $this->client->getObjectMetadata([
+            $metadata = $this->obsClient->getObjectMetadata([
                 'Bucket' => $this->bucket,
                 'Key' => $this->pathPrefixer->prefixPath($path),
             ]);
@@ -397,7 +370,7 @@ class ObsAdapter implements FilesystemAdapter
             $path = $this->pathPrefixer->stripPrefix((string) ($metadata['Key'] ?? $metadata['Prefix']));
         }
 
-        if (substr($path, -1) === '/') {
+        if (str_ends_with($path, '/')) {
             return new DirectoryAttributes(rtrim($path, '/'));
         }
 
@@ -469,7 +442,7 @@ class ObsAdapter implements FilesystemAdapter
     {
         try {
             /** @var array{Body: \Psr\Http\Message\StreamInterface} $model */
-            $model = $this->client->getObject([
+            $model = $this->obsClient->getObject([
                 'Bucket' => $this->bucket,
                 'Key' => $this->pathPrefixer->prefixPath($path),
             ]);
@@ -507,7 +480,7 @@ class ObsAdapter implements FilesystemAdapter
             $options['Marker'] = $nextMarker;
 
             /** @var array{Contents: array<array{Key: string|null, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string}>|null, CommonPrefixes: array<array<string, string>>|null, NextMarker: ?string} $model */
-            $model = $this->client->listObjects($options);
+            $model = $this->obsClient->listObjects($options);
 
             $nextMarker = $model['NextMarker'];
             $objects = $model['Contents'];
@@ -604,7 +577,7 @@ class ObsAdapter implements FilesystemAdapter
         }
 
         $endpoint = $this->options['endpoint'];
-        if (strpos($endpoint, 'http') !== 0) {
+        if (! str_starts_with($endpoint, 'http')) {
             $endpoint = 'https://' . $endpoint;
         }
 
@@ -623,15 +596,18 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * Get a signed URL for the file at the given path.
      *
-     * @param \DateTimeInterface|int $expiration
      * @param array<string, mixed> $options
      */
-    public function signUrl(string $path, $expiration, array $options = [], string $method = 'GET'): string
-    {
+    public function signUrl(
+        string $path,
+        DateTimeInterface|int $expiration,
+        array $options = [],
+        string $method = 'GET'
+    ): string {
         $expires = $expiration instanceof DateTimeInterface ? $expiration->getTimestamp() - time() : $expiration;
 
         /** @var array{SignedUrl: string} $model */
-        $model = $this->client->createSignedUrl([
+        $model = $this->obsClient->createSignedUrl([
             'Method' => $method,
             'Bucket' => $this->bucket,
             'Key' => $this->pathPrefixer->prefixPath($path),
@@ -645,11 +621,14 @@ class ObsAdapter implements FilesystemAdapter
     /**
      * Get a temporary URL for the file at the given path.
      *
-     * @param \DateTimeInterface|int $expiration
      * @param array<string, mixed> $options
      */
-    public function getTemporaryUrl(string $path, $expiration, array $options = [], string $method = 'GET'): string
-    {
+    public function getTemporaryUrl(
+        string $path,
+        DateTimeInterface|int $expiration,
+        array $options = [],
+        string $method = 'GET'
+    ): string {
         $uri = new Uri($this->signUrl($path, $expiration, $options, $method));
 
         if (isset($this->options['temporary_url'])) {
