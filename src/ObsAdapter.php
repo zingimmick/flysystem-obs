@@ -21,6 +21,7 @@ use League\Flysystem\UnableToCreateDirectory;
 use League\Flysystem\UnableToDeleteDirectory;
 use League\Flysystem\UnableToDeleteFile;
 use League\Flysystem\UnableToGeneratePublicUrl;
+use League\Flysystem\UnableToGenerateTemporaryUrl;
 use League\Flysystem\UnableToMoveFile;
 use League\Flysystem\UnableToProvideChecksum;
 use League\Flysystem\UnableToReadFile;
@@ -28,6 +29,7 @@ use League\Flysystem\UnableToRetrieveMetadata;
 use League\Flysystem\UnableToSetVisibility;
 use League\Flysystem\UnableToWriteFile;
 use League\Flysystem\UrlGeneration\PublicUrlGenerator;
+use League\Flysystem\UrlGeneration\TemporaryUrlGenerator;
 use League\MimeTypeDetection\FinfoMimeTypeDetector;
 use League\MimeTypeDetection\MimeTypeDetector;
 use Obs\ObsClient;
@@ -35,7 +37,7 @@ use Obs\ObsException;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
 
-class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvider
+class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvider, TemporaryUrlGenerator
 {
     /**
      * @var string[]
@@ -696,5 +698,23 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
         }
 
         return trim($metadata['ETag'], '"');
+    }
+
+    public function temporaryUrl(string $path, DateTimeInterface $expiresAt, Config $config): string
+    {
+        try {
+            /** @var array{SignedUrl: string} $model */
+            $model = $this->obsClient->createSignedUrl([
+                'Bucket' => $this->bucket,
+                'Key' => $this->pathPrefixer->prefixPath($path),
+                'Expires' => $expiresAt->getTimestamp() - time(),
+                'Method' => 'GET',
+                'QueryParams' => (array) $config->get('gcp_signing_options', []),
+            ]);
+
+            return $model['SignedUrl'];
+        } catch (\Throwable $throwable) {
+            throw UnableToGenerateTemporaryUrl::dueToError($path, $throwable);
+        }
     }
 }
