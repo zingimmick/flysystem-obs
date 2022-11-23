@@ -11,7 +11,6 @@ use League\Flysystem\StorageAttributes;
 use League\Flysystem\UnableToCopyFile;
 use League\Flysystem\UnableToRetrieveMetadata;
 use League\Flysystem\Visibility;
-use Mockery;
 use Obs\Internal\Common\Model;
 use Obs\ObsClient;
 use Obs\ObsException;
@@ -33,7 +32,7 @@ final class MockAdapterTest extends TestCase
     {
         parent::setUp();
 
-        $this->legacyMock = Mockery::mock(ObsClient::class);
+        $this->legacyMock = \Mockery::mock(ObsClient::class);
         $this->obsAdapter = new ObsAdapter($this->legacyMock, 'test');
         $this->mockPutObject('fixture/read.txt', 'read-test');
         $this->obsAdapter->write('fixture/read.txt', 'read-test', new Config());

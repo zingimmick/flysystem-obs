@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Zing\Flysystem\Obs;
 
-use DateTimeInterface;
 use GuzzleHttp\Psr7\Uri;
 use League\Flysystem\ChecksumAlgoIsNotSupported;
 use League\Flysystem\ChecksumProvider;
@@ -607,11 +606,11 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
      */
     public function signUrl(
         string $path,
-        DateTimeInterface|int $expiration,
+        \DateTimeInterface|int $expiration,
         array $options = [],
         string $method = 'GET'
     ): string {
-        $expires = $expiration instanceof DateTimeInterface ? $expiration->getTimestamp() - time() : $expiration;
+        $expires = $expiration instanceof \DateTimeInterface ? $expiration->getTimestamp() - time() : $expiration;
 
         /** @var array{SignedUrl: string} $model */
         $model = $this->obsClient->createSignedUrl([
@@ -632,7 +631,7 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
      */
     public function getTemporaryUrl(
         string $path,
-        DateTimeInterface|int $expiration,
+        \DateTimeInterface|int $expiration,
         array $options = [],
         string $method = 'GET'
     ): string {
@@ -700,7 +699,7 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
         return trim($metadata['ETag'], '"');
     }
 
-    public function temporaryUrl(string $path, DateTimeInterface $expiresAt, Config $config): string
+    public function temporaryUrl(string $path, \DateTimeInterface $expiresAt, Config $config): string
     {
         try {
             /** @var array{SignedUrl: string} $model */
