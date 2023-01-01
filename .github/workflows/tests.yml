@@ -18,7 +18,7 @@ jobs:
         stability: [lowest, highest]
         mock: [true]
         include:
-          - php: 8.1
+          - php: latest
             stability: highest
             mock: false
 
