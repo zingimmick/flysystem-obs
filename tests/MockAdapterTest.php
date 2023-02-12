@@ -487,7 +487,7 @@ final class MockAdapterTest extends TestCase
     /**
      * @return \Iterator<string[]>
      */
-    public function provideVisibilities(): \Iterator
+    public static function provideVisibilities(): \Iterator
     {
         yield [Visibility::PUBLIC];
 
@@ -830,7 +830,11 @@ final class MockAdapterTest extends TestCase
                     'Prefix' => 'path/',
                     'Delimiter' => '/',
                     'MaxKeys' => 1000,
-                    'CommonPrefixes' => [],
+                    'CommonPrefixes' => [
+                        [
+                            'Prefix' => 'path/',
+                        ],
+                    ],
                     'Location' => 'cn-east-3',
                     'HttpStatusCode' => 200,
                     'Reason' => 'OK',
@@ -871,7 +875,7 @@ final class MockAdapterTest extends TestCase
                     'Reason' => 'OK',
                 ]
             ));
-        self::assertNotEmpty($this->obsAdapter->listContents('path', false));
+        self::assertNotEmpty(iterator_to_array($this->obsAdapter->listContents('path', false)));
         $this->legacyMock->shouldReceive('listObjects')
             ->withArgs([
                 [

@@ -132,7 +132,7 @@ final class ValidAdapterTest extends TestCase
     /**
      * @return \Iterator<string[]>
      */
-    public function provideVisibilities(): \Iterator
+    public static function provideVisibilities(): \Iterator
     {
         yield [Visibility::PUBLIC];
 
