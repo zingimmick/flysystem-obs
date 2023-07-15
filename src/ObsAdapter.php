@@ -406,9 +406,11 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
             if (! isset($metadata[$field])) {
                 continue;
             }
+
             if ($metadata[$field] === '') {
                 continue;
             }
+
             $extracted[$field] = $metadata[$field];
         }
 
