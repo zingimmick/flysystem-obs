@@ -41,7 +41,7 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
     /**
      * @var string[]
      */
-private const EXTRA_METADATA_FIELDS = ['Metadata', 'StorageClass', 'ETag', 'VersionId'];
+    private const EXTRA_METADATA_FIELDS = ['Metadata', 'StorageClass', 'ETag', 'VersionId'];
 
     /**
      * @var string
@@ -403,9 +403,13 @@ private const EXTRA_METADATA_FIELDS = ['Metadata', 'StorageClass', 'ETag', 'Vers
         $extracted = [];
 
         foreach (self::EXTRA_METADATA_FIELDS as $field) {
-            if (isset($metadata[$field]) && $metadata[$field] !== '') {
-                $extracted[$field] = $metadata[$field];
+            if (! isset($metadata[$field])) {
+                continue;
             }
+            if ($metadata[$field] === '') {
+                continue;
+            }
+            $extracted[$field] = $metadata[$field];
         }
 
         return $extracted;
@@ -467,7 +471,7 @@ private const EXTRA_METADATA_FIELDS = ['Metadata', 'StorageClass', 'ETag', 'Vers
     public function listDirObjects(string $dirname = '', bool $recursive = false): array
     {
         $prefix = trim($this->pathPrefixer->prefixPath($dirname), '/');
-        $prefix = empty($prefix) ? '' : $prefix . '/';
+        $prefix = $prefix === '' ? '' : $prefix . '/';
 
         $nextMarker = '';
 
@@ -511,7 +515,7 @@ private const EXTRA_METADATA_FIELDS = ['Metadata', 'StorageClass', 'ETag', 'Vers
     private function processObjects(array $result, ?array $objects, string $dirname): array
     {
         $result['objects'] = [];
-        if (! empty($objects)) {
+        if ($objects !== null && $objects !== []) {
             foreach ($objects as $object) {
                 $object['Prefix'] = $dirname;
                 $result['objects'][] = $object;
@@ -529,7 +533,7 @@ private const EXTRA_METADATA_FIELDS = ['Metadata', 'StorageClass', 'ETag', 'Vers
      */
     private function processPrefixes(array $result, ?array $prefixes): array
     {
-        if (! empty($prefixes)) {
+        if ($prefixes !== null && $prefixes !== []) {
             foreach ($prefixes as $prefix) {
                 $result['prefix'][] = $prefix['Prefix'];
             }
