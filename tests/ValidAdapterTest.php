@@ -132,7 +132,7 @@ final class ValidAdapterTest extends TestCase
     /**
      * @return \Iterator<string[]>
      */
-    public static function provideVisibilities(): \Iterator
+    public static function provideWriteStreamWithVisibilityCases(): iterable
     {
         yield [Visibility::PUBLIC];
 
@@ -140,7 +140,7 @@ final class ValidAdapterTest extends TestCase
     }
 
     /**
-     * @dataProvider provideVisibilities
+     * @dataProvider provideWriteStreamWithVisibilityCases
      */
     public function testWriteStreamWithVisibility(string $visibility): void
     {
