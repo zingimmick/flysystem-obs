@@ -487,7 +487,7 @@ final class MockAdapterTest extends TestCase
     /**
      * @return \Iterator<string[]>
      */
-    public static function provideWriteStreamWithVisibilityCases(): iterable
+    public static function provideWriteStreamWithVisibilityCases(): \Iterator
     {
         yield [Visibility::PUBLIC];
 
