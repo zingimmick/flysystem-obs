@@ -36,9 +36,6 @@ use Obs\ObsException;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
 
-/**
- * @see \Zing\Flysystem\Obs\Tests\ObsAdapterTest
- */
 class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvider, TemporaryUrlGenerator
 {
     /**
