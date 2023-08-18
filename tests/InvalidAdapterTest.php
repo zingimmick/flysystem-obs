@@ -119,7 +119,7 @@ final class InvalidAdapterTest extends TestCase
     public function testListContents(): void
     {
         $this->expectException(ObsException::class);
-        self::assertEmpty(iterator_to_array($this->obsAdapter->listContents('/', false)));
+        $this->assertEmpty(iterator_to_array($this->obsAdapter->listContents('/', false)));
     }
 
     public function testGetSize(): void
@@ -145,7 +145,7 @@ final class InvalidAdapterTest extends TestCase
 
     public function testHas(): void
     {
-        self::assertFalse($this->obsAdapter->fileExists('file.txt'));
+        $this->assertFalse($this->obsAdapter->fileExists('file.txt'));
     }
 
     public function testBucket(): void
@@ -153,7 +153,7 @@ final class InvalidAdapterTest extends TestCase
         $obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '', null, null, [
             'endpoint' => 'http://obs.cdn.com',
         ]);
-        self::assertSame('test', $obsAdapter->getBucket());
+        $this->assertSame('test', $obsAdapter->getBucket());
     }
 
     public function testSetBucket(): void
@@ -162,7 +162,7 @@ final class InvalidAdapterTest extends TestCase
             'endpoint' => 'http://obs.cdn.com',
         ]);
         $obsAdapter->setBucket('new-bucket');
-        self::assertSame('new-bucket', $obsAdapter->getBucket());
+        $this->assertSame('new-bucket', $obsAdapter->getBucket());
     }
 
     public function testGetUrl(): void
@@ -170,7 +170,7 @@ final class InvalidAdapterTest extends TestCase
         $obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '', null, null, [
             'endpoint' => 'http://obs.cdn.com',
         ]);
-        self::assertSame('http://test.obs.cdn.com/test', $obsAdapter->getUrl('test'));
+        $this->assertSame('http://test.obs.cdn.com/test', $obsAdapter->getUrl('test'));
     }
 
     public function testGetClient(): void
@@ -178,8 +178,8 @@ final class InvalidAdapterTest extends TestCase
         $obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '', null, null, [
             'endpoint' => 'http://obs.cdn.com',
         ]);
-        self::assertSame($this->obsClient, $obsAdapter->getClient());
-        self::assertSame($this->obsClient, $obsAdapter->kernel());
+        $this->assertSame($this->obsClient, $obsAdapter->getClient());
+        $this->assertSame($this->obsClient, $obsAdapter->kernel());
     }
 
     public function testGetUrlWithoutSchema(): void
@@ -187,7 +187,7 @@ final class InvalidAdapterTest extends TestCase
         $obsAdapter = new ObsAdapter($this->obsClient, self::CONFIG['bucket'], '', null, null, [
             'endpoint' => 'obs.cdn.com',
         ]);
-        self::assertSame('https://test.obs.cdn.com/test', $obsAdapter->getUrl('test'));
+        $this->assertSame('https://test.obs.cdn.com/test', $obsAdapter->getUrl('test'));
     }
 
     public function testGetUrlWithoutEndpoint(): void
@@ -204,7 +204,7 @@ final class InvalidAdapterTest extends TestCase
             'endpoint' => 'https://obs.cdn.com',
             'url' => 'https://obs.cdn.com',
         ]);
-        self::assertSame('https://obs.cdn.com/test', $obsAdapter->getUrl('test'));
+        $this->assertSame('https://obs.cdn.com/test', $obsAdapter->getUrl('test'));
     }
 
     public function testGetUrlWithBucketEndpoint(): void
@@ -213,7 +213,7 @@ final class InvalidAdapterTest extends TestCase
             'endpoint' => 'https://obs.cdn.com',
             'bucket_endpoint' => true,
         ]);
-        self::assertSame('https://obs.cdn.com/test', $obsAdapter->getUrl('test'));
+        $this->assertSame('https://obs.cdn.com/test', $obsAdapter->getUrl('test'));
     }
 
     public function testGetTemporaryUrlWithUrl(): void
@@ -222,13 +222,13 @@ final class InvalidAdapterTest extends TestCase
             'endpoint' => 'https://obs.cdn.com',
             'temporary_url' => 'https://obs.cdn.com',
         ]);
-        self::assertStringStartsWith('https://obs.cdn.com/test', $obsAdapter->getTemporaryUrl('test', 10));
+        $this->assertStringStartsWith('https://obs.cdn.com/test', $obsAdapter->getTemporaryUrl('test', 10));
     }
 
     public function testDirectoryExists(): void
     {
         if (! class_exists(UnableToCheckDirectoryExistence::class)) {
-            self::markTestSkipped('Require League Flysystem v3');
+            $this->markTestSkipped('Require League Flysystem v3');
         }
 
         $this->expectException(UnableToCheckDirectoryExistence::class);
