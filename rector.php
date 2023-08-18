@@ -21,9 +21,7 @@ return static function (RectorConfig $rectorConfig): void {
         [
             RenameVariableToMatchMethodCallReturnTypeRector::class,
             RenameParamToMatchTypeRector::class,
-            AddSeeTestAnnotationRector::class,
             FinalizeClassesWithoutChildrenRector::class,
-            RepeatedLiteralToClassConstantRector::class,
             PrivatizeLocalGetterToPropertyRector::class,
         ]
     );
