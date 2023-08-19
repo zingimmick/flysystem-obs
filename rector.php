@@ -6,6 +6,7 @@ use Rector\Config\RectorConfig;
 use Rector\Naming\Rector\Assign\RenameVariableToMatchMethodCallReturnTypeRector;
 use Rector\Naming\Rector\ClassMethod\RenameParamToMatchTypeRector;
 use Rector\PHPUnit\CodeQuality\Rector\Class_\AddSeeTestAnnotationRector;
+use Rector\PHPUnit\CodeQuality\Rector\ClassMethod\ReplaceTestAnnotationWithPrefixedFunctionRector;
 use Rector\PHPUnit\Set\PHPUnitSetList;
 use Rector\Privatization\Rector\Class_\FinalizeClassesWithoutChildrenRector;
 use Rector\Privatization\Rector\MethodCall\PrivatizeLocalGetterToPropertyRector;
@@ -23,6 +24,7 @@ return static function (RectorConfig $rectorConfig): void {
             AddSeeTestAnnotationRector::class,
             FinalizeClassesWithoutChildrenRector::class,
             PrivatizeLocalGetterToPropertyRector::class,
+            ReplaceTestAnnotationWithPrefixedFunctionRector::class => [__DIR__ . '/tests/ObsAdapterTest.php'],
         ]
     );
     $rectorConfig->paths([__DIR__ . '/src', __DIR__ . '/tests', __DIR__ . '/ecs.php', __DIR__ . '/rector.php']);
