@@ -38,7 +38,7 @@ final class ObsAdapterTest extends FilesystemAdapterTestCase
     protected function setUp(): void
     {
         if ((string) getenv('MOCK') !== 'false') {
-            self::markTestSkipped('Mock tests enabled');
+            $this->markTestSkipped('Mock tests enabled');
         }
 
         $this->filesystemAdapter = self::createFilesystemAdapter();
@@ -68,7 +68,7 @@ final class ObsAdapterTest extends FilesystemAdapterTestCase
             ->write('unknown-mime-type.md5', '', new Config());
 
         $this->runScenario(function (): void {
-            self::assertSame('binary/octet-stream', $this->adapter()->mimeType('unknown-mime-type.md5')->mimeType());
+            $this->assertSame('binary/octet-stream', $this->adapter()->mimeType('unknown-mime-type.md5')->mimeType());
         });
     }
 }

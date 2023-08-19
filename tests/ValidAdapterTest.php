@@ -42,7 +42,7 @@ final class ValidAdapterTest extends TestCase
     protected function setUp(): void
     {
         if ((string) getenv('MOCK') !== 'false') {
-            self::markTestSkipped('Mock tests enabled');
+            $this->markTestSkipped('Mock tests enabled');
         }
 
         parent::setUp();
@@ -71,62 +71,62 @@ final class ValidAdapterTest extends TestCase
     {
         $this->obsAdapter->write('fixture/file.txt', 'write', new Config());
         $this->obsAdapter->copy('fixture/file.txt', 'fixture/copy.txt', new Config());
-        self::assertSame('write', $this->obsAdapter->read('fixture/copy.txt'));
+        $this->assertSame('write', $this->obsAdapter->read('fixture/copy.txt'));
     }
 
     public function testCreateDir(): void
     {
         $this->obsAdapter->createDirectory('fixture/path', new Config());
-        self::assertTrue($this->obsAdapter->directoryExists('fixture/path'));
-        self::assertSame([], iterator_to_array($this->obsAdapter->listContents('fixture/path', false)));
-        self::assertSame([], iterator_to_array($this->obsAdapter->listContents('fixture/path/', false)));
+        $this->assertTrue($this->obsAdapter->directoryExists('fixture/path'));
+        $this->assertSame([], iterator_to_array($this->obsAdapter->listContents('fixture/path', false)));
+        $this->assertSame([], iterator_to_array($this->obsAdapter->listContents('fixture/path/', false)));
         $this->obsAdapter->write('fixture/path1/file.txt', 'test', new Config());
         $contents = iterator_to_array($this->obsAdapter->listContents('fixture/path1', false));
-        self::assertCount(1, $contents);
+        $this->assertCount(1, $contents);
         $file = $contents[0];
-        self::assertSame('fixture/path1/file.txt', $file['path']);
+        $this->assertSame('fixture/path1/file.txt', $file['path']);
         $this->obsAdapter->deleteDirectory('fixture/path');
-        self::assertFalse($this->obsAdapter->directoryExists('fixture/path'));
+        $this->assertFalse($this->obsAdapter->directoryExists('fixture/path'));
         $this->obsAdapter->deleteDirectory('fixture/path1');
-        self::assertFalse($this->obsAdapter->directoryExists('fixture/path1'));
+        $this->assertFalse($this->obsAdapter->directoryExists('fixture/path1'));
     }
 
     public function testDirectoryExists(): void
     {
-        self::assertFalse($this->obsAdapter->directoryExists('fixture/exists-directory'));
+        $this->assertFalse($this->obsAdapter->directoryExists('fixture/exists-directory'));
         $this->obsAdapter->createDirectory('fixture/exists-directory', new Config());
-        self::assertTrue($this->obsAdapter->directoryExists('fixture/exists-directory'));
+        $this->assertTrue($this->obsAdapter->directoryExists('fixture/exists-directory'));
     }
 
     public function testSetVisibility(): void
     {
         $this->obsAdapter->write('fixture/file.txt', 'write', new Config());
-        self::assertSame(Visibility::PRIVATE, $this->obsAdapter->visibility('fixture/file.txt')['visibility']);
+        $this->assertSame(Visibility::PRIVATE, $this->obsAdapter->visibility('fixture/file.txt')['visibility']);
         $this->obsAdapter->setVisibility('fixture/file.txt', Visibility::PUBLIC);
-        self::assertSame(Visibility::PUBLIC, $this->obsAdapter->visibility('fixture/file.txt')['visibility']);
+        $this->assertSame(Visibility::PUBLIC, $this->obsAdapter->visibility('fixture/file.txt')['visibility']);
     }
 
     public function testRename(): void
     {
         $this->obsAdapter->write('fixture/from.txt', 'write', new Config());
-        self::assertTrue($this->obsAdapter->fileExists('fixture/from.txt'));
-        self::assertFalse($this->obsAdapter->fileExists('fixture/to.txt'));
+        $this->assertTrue($this->obsAdapter->fileExists('fixture/from.txt'));
+        $this->assertFalse($this->obsAdapter->fileExists('fixture/to.txt'));
         $this->obsAdapter->move('fixture/from.txt', 'fixture/to.txt', new Config());
-        self::assertFalse($this->obsAdapter->fileExists('fixture/from.txt'));
-        self::assertSame('write', $this->obsAdapter->read('fixture/to.txt'));
+        $this->assertFalse($this->obsAdapter->fileExists('fixture/from.txt'));
+        $this->assertSame('write', $this->obsAdapter->read('fixture/to.txt'));
         $this->obsAdapter->delete('fixture/to.txt');
     }
 
     public function testDeleteDir(): void
     {
         $this->obsAdapter->deleteDirectory('fixture');
-        self::assertFalse($this->obsAdapter->directoryExists('fixture'));
+        $this->assertFalse($this->obsAdapter->directoryExists('fixture'));
     }
 
     public function testWriteStream(): void
     {
         $this->obsAdapter->writeStream('fixture/file.txt', $this->streamForResource('write'), new Config());
-        self::assertSame('write', $this->obsAdapter->read('fixture/file.txt'));
+        $this->assertSame('write', $this->obsAdapter->read('fixture/file.txt'));
     }
 
     /**
@@ -147,7 +147,7 @@ final class ValidAdapterTest extends TestCase
         $this->obsAdapter->writeStream('fixture/file.txt', $this->streamForResource('write'), new Config([
             'visibility' => $visibility,
         ]));
-        self::assertSame($visibility, $this->obsAdapter->visibility('fixture/file.txt')['visibility']);
+        $this->assertSame($visibility, $this->obsAdapter->visibility('fixture/file.txt')['visibility']);
     }
 
     public function testWriteStreamWithExpires(): void
@@ -155,7 +155,7 @@ final class ValidAdapterTest extends TestCase
         $this->obsAdapter->writeStream('fixture/file.txt', $this->streamForResource('write'), new Config([
             'Expires' => 20,
         ]));
-        self::assertSame('write', $this->obsAdapter->read('fixture/file.txt'));
+        $this->assertSame('write', $this->obsAdapter->read('fixture/file.txt'));
     }
 
     public function testWriteStreamWithMimetype(): void
@@ -163,87 +163,87 @@ final class ValidAdapterTest extends TestCase
         $this->obsAdapter->writeStream('fixture/file.txt', $this->streamForResource('write'), new Config([
             'ContentType' => 'image/png',
         ]));
-        self::assertSame('image/png', $this->obsAdapter->mimeType('fixture/file.txt')['mime_type']);
+        $this->assertSame('image/png', $this->obsAdapter->mimeType('fixture/file.txt')['mime_type']);
     }
 
     public function testDelete(): void
     {
         $this->obsAdapter->writeStream('fixture/file.txt', $this->streamForResource('test'), new Config());
-        self::assertTrue($this->obsAdapter->fileExists('fixture/file.txt'));
+        $this->assertTrue($this->obsAdapter->fileExists('fixture/file.txt'));
         $this->obsAdapter->delete('fixture/file.txt');
-        self::assertFalse($this->obsAdapter->fileExists('fixture/file.txt'));
+        $this->assertFalse($this->obsAdapter->fileExists('fixture/file.txt'));
     }
 
     public function testWrite(): void
     {
         $this->obsAdapter->write('fixture/file.txt', 'write', new Config());
-        self::assertSame('write', $this->obsAdapter->read('fixture/file.txt'));
+        $this->assertSame('write', $this->obsAdapter->read('fixture/file.txt'));
     }
 
     public function testRead(): void
     {
-        self::assertSame('read-test', $this->obsAdapter->read('fixture/read.txt'));
+        $this->assertSame('read-test', $this->obsAdapter->read('fixture/read.txt'));
     }
 
     public function testReadStream(): void
     {
-        self::assertSame('read-test', stream_get_contents($this->obsAdapter->readStream('fixture/read.txt')));
+        $this->assertSame('read-test', stream_get_contents($this->obsAdapter->readStream('fixture/read.txt')));
     }
 
     public function testGetVisibility(): void
     {
-        self::assertSame(Visibility::PRIVATE, $this->obsAdapter->visibility('fixture/read.txt')->visibility());
+        $this->assertSame(Visibility::PRIVATE, $this->obsAdapter->visibility('fixture/read.txt')->visibility());
     }
 
     public function testListContents(): void
     {
-        self::assertNotEmpty(iterator_to_array($this->obsAdapter->listContents('fixture', false)));
-        self::assertEmpty(iterator_to_array($this->obsAdapter->listContents('path1', false)));
+        $this->assertNotEmpty(iterator_to_array($this->obsAdapter->listContents('fixture', false)));
+        $this->assertEmpty(iterator_to_array($this->obsAdapter->listContents('path1', false)));
         $this->obsAdapter->createDirectory('fixture/path/dir', new Config());
         $this->obsAdapter->write('fixture/path/dir/file.txt', 'test', new Config());
 
         /** @var \League\Flysystem\StorageAttributes[] $contents */
         $contents = iterator_to_array($this->obsAdapter->listContents('fixture/path', true));
-        self::assertContainsOnlyInstancesOf(StorageAttributes::class, $contents);
-        self::assertCount(2, $contents);
+        $this->assertContainsOnlyInstancesOf(StorageAttributes::class, $contents);
+        $this->assertCount(2, $contents);
         /** @var \League\Flysystem\FileAttributes $file */
         /** @var \League\Flysystem\DirectoryAttributes $directory */
         [$file,$directory] = $contents[0]->isFile() ? [$contents[0], $contents[1]] : [$contents[1], $contents[0]];
-        self::assertInstanceOf(FileAttributes::class, $file);
-        self::assertSame('fixture/path/dir/file.txt', $file->path());
-        self::assertSame(4, $file->fileSize());
+        $this->assertInstanceOf(FileAttributes::class, $file);
+        $this->assertSame('fixture/path/dir/file.txt', $file->path());
+        $this->assertSame(4, $file->fileSize());
 
-        self::assertNull($file->mimeType());
-        self::assertNotNull($file->lastModified());
-        self::assertNull($file->visibility());
-        self::assertIsArray($file->extraMetadata());
-        self::assertInstanceOf(DirectoryAttributes::class, $directory);
-        self::assertSame('fixture/path/dir', $directory->path());
+        $this->assertNull($file->mimeType());
+        $this->assertNotNull($file->lastModified());
+        $this->assertNull($file->visibility());
+        $this->assertIsArray($file->extraMetadata());
+        $this->assertInstanceOf(DirectoryAttributes::class, $directory);
+        $this->assertSame('fixture/path/dir', $directory->path());
     }
 
     public function testGetSize(): void
     {
-        self::assertSame(9, $this->obsAdapter->fileSize('fixture/read.txt')->fileSize());
+        $this->assertSame(9, $this->obsAdapter->fileSize('fixture/read.txt')->fileSize());
     }
 
     public function testGetTimestamp(): void
     {
-        self::assertGreaterThan(time() - 10, $this->obsAdapter->lastModified('fixture/read.txt')->lastModified());
+        $this->assertGreaterThan(time() - 10, $this->obsAdapter->lastModified('fixture/read.txt')->lastModified());
     }
 
     public function testGetMimetype(): void
     {
-        self::assertSame('text/plain', $this->obsAdapter->mimeType('fixture/read.txt')->mimeType());
+        $this->assertSame('text/plain', $this->obsAdapter->mimeType('fixture/read.txt')->mimeType());
     }
 
     public function testHas(): void
     {
-        self::assertTrue($this->obsAdapter->fileExists('fixture/read.txt'));
+        $this->assertTrue($this->obsAdapter->fileExists('fixture/read.txt'));
     }
 
     public function testGetTemporaryUrl(): void
     {
-        self::assertSame(
+        $this->assertSame(
             'read-test',
             file_get_contents($this->obsAdapter->getTemporaryUrl('fixture/read.txt', 10, []))
         );
@@ -253,7 +253,7 @@ final class ValidAdapterTest extends TestCase
     {
         $contents = file_get_contents('https://avatars.githubusercontent.com/u/26657141');
         if ($contents === false) {
-            self::markTestSkipped('Require image contents');
+            $this->markTestSkipped('Require image contents');
         }
 
         $this->obsAdapter->write('fixture/image.png', $contents, new Config());
@@ -263,8 +263,8 @@ final class ValidAdapterTest extends TestCase
             'x-image-process' => 'image/crop,w_200,h_100',
         ]));
 
-        self::assertSame(200, $info[0]);
-        self::assertSame(100, $info[1]);
+        $this->assertSame(200, $info[0]);
+        $this->assertSame(100, $info[1]);
     }
 
     public function testForceMimetype(): void
@@ -272,11 +272,11 @@ final class ValidAdapterTest extends TestCase
         $this->obsAdapter->write('fixture/file.txt', 'test', new Config([
             'mimetype' => 'image/png',
         ]));
-        self::assertSame('image/png', $this->obsAdapter->mimeType('fixture/file.txt')->mimeType());
+        $this->assertSame('image/png', $this->obsAdapter->mimeType('fixture/file.txt')->mimeType());
         $this->obsAdapter->write('fixture/file2.txt', 'test', new Config([
             'ContentType' => 'image/png',
         ]));
-        self::assertSame('image/png', $this->obsAdapter->mimeType('fixture/file2.txt')->mimeType());
+        $this->assertSame('image/png', $this->obsAdapter->mimeType('fixture/file2.txt')->mimeType());
     }
 
     public function testMovingAFileWithVisibility(): void
@@ -292,16 +292,16 @@ final class ValidAdapterTest extends TestCase
         $adapter->move('source.txt', 'destination.txt', new Config([
             Config::OPTION_VISIBILITY => Visibility::PRIVATE,
         ]));
-        self::assertFalse(
+        $this->assertFalse(
             $adapter->fileExists('source.txt'),
             'After moving a file should no longer exist in the original location.'
         );
-        self::assertTrue(
+        $this->assertTrue(
             $adapter->fileExists('destination.txt'),
             'After moving, a file should be present at the new location.'
         );
-        self::assertSame(Visibility::PRIVATE, $adapter->visibility('destination.txt')->visibility());
-        self::assertSame('contents to be copied', $adapter->read('destination.txt'));
+        $this->assertSame(Visibility::PRIVATE, $adapter->visibility('destination.txt')->visibility());
+        $this->assertSame('contents to be copied', $adapter->read('destination.txt'));
     }
 
     public function testCopyingAFileWithVisibility(): void
@@ -319,9 +319,9 @@ final class ValidAdapterTest extends TestCase
             Config::OPTION_VISIBILITY => Visibility::PRIVATE,
         ]));
 
-        self::assertTrue($adapter->fileExists('source.txt'));
-        self::assertTrue($adapter->fileExists('destination.txt'));
-        self::assertSame(Visibility::PRIVATE, $adapter->visibility('destination.txt')->visibility());
-        self::assertSame('contents to be copied', $adapter->read('destination.txt'));
+        $this->assertTrue($adapter->fileExists('source.txt'));
+        $this->assertTrue($adapter->fileExists('destination.txt'));
+        $this->assertSame(Visibility::PRIVATE, $adapter->visibility('destination.txt')->visibility());
+        $this->assertSame('contents to be copied', $adapter->read('destination.txt'));
     }
 }
