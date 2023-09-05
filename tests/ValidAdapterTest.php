@@ -206,6 +206,7 @@ final class ValidAdapterTest extends TestCase
         $contents = iterator_to_array($this->obsAdapter->listContents('fixture/path', true));
         $this->assertContainsOnlyInstancesOf(StorageAttributes::class, $contents);
         $this->assertCount(2, $contents);
+
         /** @var \League\Flysystem\FileAttributes $file */
         /** @var \League\Flysystem\DirectoryAttributes $directory */
         [$file,$directory] = $contents[0]->isFile() ? [$contents[0], $contents[1]] : [$contents[1], $contents[0]];
