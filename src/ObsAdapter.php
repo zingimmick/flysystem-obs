@@ -92,8 +92,8 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
         protected array $options = []
     ) {
         $this->pathPrefixer = new PathPrefixer($prefix);
-        $this->visibilityConverter = $visibility?: new PortableVisibilityConverter();
-        $this->mimeTypeDetector = $mimeTypeDetector ?: new FinfoMimeTypeDetector();
+        $this->visibilityConverter = $visibility instanceof \Zing\Flysystem\Obs\VisibilityConverter ? $visibility : new PortableVisibilityConverter();
+        $this->mimeTypeDetector = $mimeTypeDetector instanceof \League\MimeTypeDetection\MimeTypeDetector ? $mimeTypeDetector : new FinfoMimeTypeDetector();
     }
 
     public function getBucket(): string
@@ -147,7 +147,7 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
 
         if ($shouldDetermineMimetype) {
             $mimeType = $this->mimeTypeDetector->detectMimeType($path, $contents);
-            if ($mimeType) {
+            if ($mimeType !== null && $mimeType !== '') {
                 $options['ContentType'] = $mimeType;
             }
         }
