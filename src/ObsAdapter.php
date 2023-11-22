@@ -29,6 +29,7 @@ use League\Flysystem\UnableToSetVisibility;
 use League\Flysystem\UnableToWriteFile;
 use League\Flysystem\UrlGeneration\PublicUrlGenerator;
 use League\Flysystem\UrlGeneration\TemporaryUrlGenerator;
+use League\Flysystem\Visibility;
 use League\MimeTypeDetection\FinfoMimeTypeDetector;
 use League\MimeTypeDetection\MimeTypeDetector;
 use Obs\ObsClient;
@@ -176,9 +177,12 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
     public function copy(string $source, string $destination, Config $config): void
     {
         try {
-            /** @var string $visibility */
-            $visibility = $config->get(Config::OPTION_VISIBILITY) ?: $this->visibility($source)
-                ->visibility();
+            /** @var string|null $visibility */
+            $visibility = $config->get(Config::OPTION_VISIBILITY);
+            if ($visibility === null && $config->get('retain_visibility', true)) {
+                $visibility = $this->visibility($source)
+                    ->visibility();
+            }
         } catch (FilesystemOperationFailed $filesystemOperationFailed) {
             throw UnableToCopyFile::fromLocationTo($source, $destination, $filesystemOperationFailed);
         }
@@ -189,7 +193,7 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
                 'Key' => $this->pathPrefixer->prefixPath($destination),
                 'CopySource' => $this->bucket . '/' . $this->pathPrefixer->prefixPath($source),
                 'MetadataDirective' => ObsClient::CopyMetadata,
-                'ACL' => $this->visibilityConverter->visibilityToAcl($visibility),
+                'ACL' => $this->visibilityConverter->visibilityToAcl($visibility ?: Visibility::PRIVATE),
             ]));
         } catch (ObsException $obsException) {
             throw UnableToCopyFile::fromLocationTo($source, $destination, $obsException);
