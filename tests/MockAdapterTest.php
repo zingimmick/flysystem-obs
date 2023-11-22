@@ -79,6 +79,28 @@ final class MockAdapterTest extends TestCase
         $this->assertSame('write', $this->obsAdapter->read('copy.txt'));
     }
 
+    public function testCopyWithoutRetainVisibility(): void
+    {
+        $this->mockPutObject('file.txt', 'write');
+        $this->obsAdapter->write('file.txt', 'write', new Config());
+        $this->legacyMock->shouldReceive('copyObject')
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Key' => 'copy.txt',
+                    'CopySource' => 'test/file.txt',
+                    'MetadataDirective' => 'COPY',
+                    'ACL' => 'private',
+                ],
+            ])->andReturn(new Model());
+        $this->mockGetVisibility('file.txt', Visibility::PUBLIC);
+        $this->obsAdapter->copy('file.txt', 'copy.txt', new Config([
+            'retain_visibility' => false,
+        ]));
+        $this->mockGetVisibility('copy.txt', Visibility::PRIVATE);
+        $this->assertSame(Visibility::PRIVATE, $this->obsAdapter->visibility('copy.txt')->visibility());
+    }
+
     public function testCopyFailed(): void
     {
         $this->mockPutObject('file.txt', 'write');

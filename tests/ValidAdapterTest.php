@@ -74,6 +74,15 @@ final class ValidAdapterTest extends TestCase
         $this->assertSame('write', $this->obsAdapter->read('fixture/copy.txt'));
     }
 
+    public function testCopyWithoutRetainVisibility(): void
+    {
+        $this->obsAdapter->write('fixture/file.txt', 'write', new Config());
+        $this->obsAdapter->copy('fixture/file.txt', 'fixture/copy.txt', new Config([
+            'retain_visibility' => false,
+        ]));
+        $this->assertSame(Visibility::PRIVATE, $this->obsAdapter->visibility('fixture/copy.txt')->visibility());
+    }
+
     public function testCreateDir(): void
     {
         $this->obsAdapter->createDirectory('fixture/path', new Config());
