@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.0 - 2023-11-22
+
+<!-- Release notes generated using configuration in .github/release.yml at 3.x -->
+### What's Changed
+
+#### Other Changes
+
+- Use latest PHP version for test by @zingimmick in https://github.com/zingimmick/flysystem-obs/pull/99
+- Update license copyright year(s) by @github-actions in https://github.com/zingimmick/flysystem-obs/pull/98
+- Fix coding style by @zingimmick in https://github.com/zingimmick/flysystem-obs/pull/109
+- Remove skipped rules on $rectorConfig->skip() are no longer exists by @zingimmick in https://github.com/zingimmick/flysystem-obs/pull/111
+- Support for PHP 8.3 by @zingimmick in https://github.com/zingimmick/flysystem-obs/pull/115
+- Allow copy without retaining visibility for adapters and implementations that required fetching visibility for copy and move. by @zingimmick in https://github.com/zingimmick/flysystem-obs/pull/118
+
+**Full Changelog**: https://github.com/zingimmick/flysystem-obs/compare/3.0.0...3.1.0
+
 ## 3.0.0 - 2022-10-26
 
 <!-- Release notes generated using configuration in .github/release.yml at 3.x -->
