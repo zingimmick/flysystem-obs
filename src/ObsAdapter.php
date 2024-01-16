@@ -93,7 +93,7 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
         protected array $options = []
     ) {
         $this->pathPrefixer = new PathPrefixer($prefix);
-        $this->visibilityConverter = $visibility instanceof \Zing\Flysystem\Obs\VisibilityConverter ? $visibility : new PortableVisibilityConverter();
+        $this->visibilityConverter = $visibility instanceof VisibilityConverter ? $visibility : new PortableVisibilityConverter();
         $this->mimeTypeDetector = $mimeTypeDetector instanceof \League\MimeTypeDetection\MimeTypeDetector ? $mimeTypeDetector : new FinfoMimeTypeDetector();
     }
 
