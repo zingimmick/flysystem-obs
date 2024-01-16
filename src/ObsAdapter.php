@@ -94,7 +94,7 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
     ) {
         $this->pathPrefixer = new PathPrefixer($prefix);
         $this->visibilityConverter = $visibility instanceof VisibilityConverter ? $visibility : new PortableVisibilityConverter();
-        $this->mimeTypeDetector = $mimeTypeDetector instanceof \League\MimeTypeDetection\MimeTypeDetector ? $mimeTypeDetector : new FinfoMimeTypeDetector();
+        $this->mimeTypeDetector = $mimeTypeDetector instanceof MimeTypeDetector ? $mimeTypeDetector : new FinfoMimeTypeDetector();
     }
 
     public function getBucket(): string
