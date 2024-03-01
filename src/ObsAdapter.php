@@ -74,7 +74,7 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
 
     private PathPrefixer $pathPrefixer;
 
-    private VisibilityConverter|\Zing\Flysystem\Obs\PortableVisibilityConverter $visibilityConverter;
+    private PortableVisibilityConverter|VisibilityConverter $visibilityConverter;
 
     private \League\MimeTypeDetection\FinfoMimeTypeDetector|MimeTypeDetector $mimeTypeDetector;
 
