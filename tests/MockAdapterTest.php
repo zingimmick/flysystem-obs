@@ -26,7 +26,7 @@ final class MockAdapterTest extends TestCase
      */
     private $legacyMock;
 
-    private \Zing\Flysystem\Obs\ObsAdapter $obsAdapter;
+    private ObsAdapter $obsAdapter;
 
     protected function setUp(): void
     {

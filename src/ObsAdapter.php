@@ -72,11 +72,11 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
         'SuccessRedirect',
     ];
 
-    private \League\Flysystem\PathPrefixer $pathPrefixer;
+    private PathPrefixer $pathPrefixer;
 
-    private \Zing\Flysystem\Obs\PortableVisibilityConverter|\Zing\Flysystem\Obs\VisibilityConverter $visibilityConverter;
+    private PortableVisibilityConverter|VisibilityConverter $visibilityConverter;
 
-    private \League\MimeTypeDetection\FinfoMimeTypeDetector|\League\MimeTypeDetection\MimeTypeDetector $mimeTypeDetector;
+    private \League\MimeTypeDetection\FinfoMimeTypeDetector|MimeTypeDetector $mimeTypeDetector;
 
     /**
      * @param array{url?: string, temporary_url?: string, endpoint?: string, bucket_endpoint?: bool} $options
