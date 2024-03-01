@@ -17,7 +17,7 @@ use Zing\Flysystem\Obs\ObsAdapter;
  */
 final class ValidAdapterTest extends TestCase
 {
-    private \Zing\Flysystem\Obs\ObsAdapter $obsAdapter;
+    private ObsAdapter $obsAdapter;
 
     private function getKey(): string
     {
