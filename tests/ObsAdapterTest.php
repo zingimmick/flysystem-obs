@@ -33,7 +33,7 @@ final class ObsAdapterTest extends FilesystemAdapterTestCase
         ]);
     }
 
-    private \League\Flysystem\FilesystemAdapter $filesystemAdapter;
+    private FilesystemAdapter $filesystemAdapter;
 
     protected function setUp(): void
     {

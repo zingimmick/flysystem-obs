@@ -37,9 +37,9 @@ final class InvalidAdapterTest extends TestCase
         'region' => '',
     ];
 
-    private \Zing\Flysystem\Obs\ObsAdapter $obsAdapter;
+    private ObsAdapter $obsAdapter;
 
-    private \Obs\ObsClient $obsClient;
+    private ObsClient $obsClient;
 
     protected function setUp(): void
     {
