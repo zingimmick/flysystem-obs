@@ -41,6 +41,11 @@ class ValidAdapterTest extends TestCase
         return false;
     }
 
+    protected function signature(): ?string
+    {
+        return null;
+    }
+
     protected function setUp(): void
     {
         if ((string) getenv('MOCK') !== 'false') {
@@ -55,6 +60,7 @@ class ValidAdapterTest extends TestCase
             'bucket' => $this->getBucket(),
             'endpoint' => $this->getEndpoint(),
             'is_cname' => $this->isBucketEndpoint(),
+            'signature' => $this->signature(),
             'path_style' => '',
             'region' => '',
         ];

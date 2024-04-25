@@ -18,4 +18,9 @@ final class BucketEndpointTest extends ValidAdapterTest
     {
         return true;
     }
+
+    protected function signature(): ?string
+    {
+        return 'v4';
+    }
 }
