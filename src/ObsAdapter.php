@@ -604,7 +604,7 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
             $domain = $this->bucket . '.' . $domain;
         }
 
-        $domain = sprintf('%s://%s', $url['scheme'], $domain);
+        $domain = \sprintf('%s://%s', $url['scheme'], $domain);
 
         return rtrim($domain, '/') . '/';
     }
