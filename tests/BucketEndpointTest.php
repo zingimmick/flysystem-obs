@@ -11,7 +11,7 @@ final class BucketEndpointTest extends ValidAdapterTest
 {
     protected function getEndpoint(): string
     {
-        return (string) getenv('OBS_BUCKET_ENDPOINT') ?: sprintf('%s.%s', $this->getBucket(), parent::getEndpoint());
+        return (string) getenv('OBS_BUCKET_ENDPOINT') ?: \sprintf('%s.%s', $this->getBucket(), parent::getEndpoint());
     }
 
     protected function isBucketEndpoint(): bool
