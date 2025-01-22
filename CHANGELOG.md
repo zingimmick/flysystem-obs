@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.1 - 2025-01-22
+
+<!-- Release notes generated using configuration in .github/release.yml at 3.x -->
+### What's Changed
+
+#### Other Changes
+
+* Update license copyright year(s) by @github-actions in https://github.com/zingimmick/flysystem-obs/pull/120
+* Allow PHPUnit 11 by @zingimmick in https://github.com/zingimmick/flysystem-obs/pull/127
+* Test bucket endpoint without custom domain by @zingimmick in https://github.com/zingimmick/flysystem-obs/pull/130
+* Remove rules that were never registered by @zingimmick in https://github.com/zingimmick/flysystem-obs/pull/136
+* Support for PHP 8.4 by @zingimmick in https://github.com/zingimmick/flysystem-obs/pull/138
+* Update license copyright year(s) by @github-actions in https://github.com/zingimmick/flysystem-obs/pull/142
+
+**Full Changelog**: https://github.com/zingimmick/flysystem-obs/compare/3.1.0...3.1.1
+
 ## 3.1.0 - 2023-11-22
 
 <!-- Release notes generated using configuration in .github/release.yml at 3.x -->
