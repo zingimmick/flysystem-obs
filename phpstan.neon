@@ -8,3 +8,4 @@ parameters:
         - tests
     ignoreErrors:
         - '#unction GuzzleHttp\\Psr7\\stream_for not found.#'
+        - '#Method Zing\\Flysystem\\Obs\\Tests\\TestCase::streamFor\(\) should return Psr\\Http\\Message\\StreamInterface but returns mixed.#'

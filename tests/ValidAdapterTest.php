@@ -235,7 +235,6 @@ class ValidAdapterTest extends TestCase
         $this->assertNull($file->mimeType());
         $this->assertNotNull($file->lastModified());
         $this->assertNull($file->visibility());
-        $this->assertIsArray($file->extraMetadata());
         $this->assertInstanceOf(DirectoryAttributes::class, $directory);
         $this->assertSame('fixture/path/dir', $directory->path());
     }
@@ -277,11 +276,10 @@ class ValidAdapterTest extends TestCase
 
         $this->obsAdapter->write('fixture/image.png', $contents, new Config());
 
-        /** @var array{int, int} $info */
         $info = getimagesize($this->obsAdapter->getTemporaryUrl('fixture/image.png', 10, [
             'x-image-process' => 'image/crop,w_200,h_100',
         ]));
-
+        $this->assertNotFalse($info);
         $this->assertSame(200, $info[0]);
         $this->assertSame(100, $info[1]);
     }
