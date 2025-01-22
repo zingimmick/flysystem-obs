@@ -9,6 +9,7 @@ use League\Flysystem\DirectoryAttributes;
 use League\Flysystem\FileAttributes;
 use League\Flysystem\StorageAttributes;
 use League\Flysystem\UnableToCopyFile;
+use League\Flysystem\UnableToDeleteDirectory;
 use League\Flysystem\UnableToRetrieveMetadata;
 use League\Flysystem\Visibility;
 use Obs\Internal\Common\Model;
@@ -480,6 +481,7 @@ final class MockAdapterTest extends TestCase
                 ],
             ])->andThrow(new ObsException());
         $this->legacyMock->shouldReceive('deleteObjects')
+            ->once()
             ->withArgs([
                 [
                     'Bucket' => 'test',
@@ -493,6 +495,23 @@ final class MockAdapterTest extends TestCase
                     ],
                 ],
             ])->andReturn(new Model());
+        $this->obsAdapter->deleteDirectory('path');
+        $this->legacyMock->shouldReceive('deleteObjects')
+            ->once()
+            ->withArgs([
+                [
+                    'Bucket' => 'test',
+                    'Objects' => [
+                        [
+                            'Key' => 'path/',
+                        ],
+                        [
+                            'Key' => 'path/file.txt',
+                        ],
+                    ],
+                ],
+            ])->andThrow(new ObsException());
+        $this->expectException(UnableToDeleteDirectory::class);
         $this->obsAdapter->deleteDirectory('path');
     }
 
