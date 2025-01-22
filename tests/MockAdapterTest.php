@@ -494,7 +494,6 @@ final class MockAdapterTest extends TestCase
                 ],
             ])->andReturn(new Model());
         $this->obsAdapter->deleteDirectory('path');
-        $this->assertTrue(true);
     }
 
     public function testWriteStream(): void

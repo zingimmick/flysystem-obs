@@ -282,7 +282,9 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
             throw UnableToRetrieveMetadata::visibility($path, $obsException->getMessage(), $obsException);
         }
 
-        $visibility = $this->visibilityConverter->aclToVisibility((array) $result->get('Grants'));
+        /** @var array<array{Grantee?: array<string, mixed>, Permission?: string}> $grants */
+        $grants = (array) $result->get('Grants');
+        $visibility = $this->visibilityConverter->aclToVisibility($grants);
 
         return new FileAttributes($path, null, $visibility);
     }
@@ -362,15 +364,16 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
     private function getMetadata(string $path, string $type): FileAttributes
     {
         try {
+            /** @var array{Key: string|null, Prefix: string|null, ContentLength?: int, Size?: int, LastModified?: string, ContentType?: string} $metadata */
             $metadata = $this->obsClient->getObjectMetadata([
                 'Bucket' => $this->bucket,
                 'Key' => $this->pathPrefixer->prefixPath($path),
-            ]);
+            ])->toArray();
         } catch (ObsException $obsException) {
             throw UnableToRetrieveMetadata::create($path, $type, $obsException->getMessage(), $obsException);
         }
 
-        $attributes = $this->mapObjectMetadata($metadata->toArray(), $path);
+        $attributes = $this->mapObjectMetadata($metadata, $path);
 
         if (! $attributes instanceof FileAttributes) {
             throw UnableToRetrieveMetadata::create($path, $type);
@@ -704,6 +707,7 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
         }
 
         try {
+            /** @var array{ETag?: string} $metadata */
             $metadata = $this->getMetadata($path, 'checksum')
                 ->extraMetadata();
         } catch (UnableToRetrieveMetadata $unableToRetrieveMetadata) {
