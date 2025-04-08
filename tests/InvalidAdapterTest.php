@@ -25,9 +25,6 @@ use Zing\Flysystem\Obs\UnableToGetUrl;
  */
 final class InvalidAdapterTest extends TestCase
 {
-    /**
-     * @var array<string, string>
-     */
     private const CONFIG = [
         'key' => 'aW52YWxpZC1rZXk=',
         'secret' => 'aW52YWxpZC1zZWNyZXQ=',
