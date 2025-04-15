@@ -10,6 +10,7 @@ use League\Flysystem\FileAttributes;
 use League\Flysystem\StorageAttributes;
 use League\Flysystem\Visibility;
 use Obs\ObsClient;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Zing\Flysystem\Obs\ObsAdapter;
 
 class ValidAdapterTest extends TestCase
@@ -148,6 +149,18 @@ class ValidAdapterTest extends TestCase
     }
 
     /**
+     * @dataProvider provideWriteStreamWithVisibilityCases
+     */
+    #[DataProvider('provideWriteStreamWithVisibilityCases')]
+    public function testWriteStreamWithVisibility(string $visibility): void
+    {
+        $this->obsAdapter->writeStream('fixture/file.txt', $this->streamForResource('write'), new Config([
+            'visibility' => $visibility,
+        ]));
+        $this->assertSame($visibility, $this->obsAdapter->visibility('fixture/file.txt')['visibility']);
+    }
+
+    /**
      * @return \Iterator<string[]>
      */
     public static function provideWriteStreamWithVisibilityCases(): \Iterator
@@ -155,17 +168,6 @@ class ValidAdapterTest extends TestCase
         yield [Visibility::PUBLIC];
 
         yield [Visibility::PRIVATE];
-    }
-
-    /**
-     * @dataProvider provideWriteStreamWithVisibilityCases
-     */
-    public function testWriteStreamWithVisibility(string $visibility): void
-    {
-        $this->obsAdapter->writeStream('fixture/file.txt', $this->streamForResource('write'), new Config([
-            'visibility' => $visibility,
-        ]));
-        $this->assertSame($visibility, $this->obsAdapter->visibility('fixture/file.txt')['visibility']);
     }
 
     public function testWriteStreamWithExpires(): void

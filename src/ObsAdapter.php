@@ -39,24 +39,12 @@ use Psr\Http\Message\UriInterface;
 
 class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvider, TemporaryUrlGenerator
 {
-    /**
-     * @var string[]
-     */
     private const EXTRA_METADATA_FIELDS = ['Metadata', 'StorageClass', 'ETag', 'VersionId'];
 
-    /**
-     * @var string
-     */
     private const DELIMITER = '/';
 
-    /**
-     * @var int
-     */
     private const MAX_KEYS = 1000;
 
-    /**
-     * @var string[]
-     */
     private const AVAILABLE_OPTIONS = [
         'ACL',
         'StorageClass',

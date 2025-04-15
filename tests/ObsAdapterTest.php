@@ -8,6 +8,7 @@ use League\Flysystem\AdapterTestUtilities\FilesystemAdapterTestCase;
 use League\Flysystem\Config;
 use League\Flysystem\FilesystemAdapter;
 use Obs\ObsClient;
+use PHPUnit\Framework\Attributes\Test;
 use Zing\Flysystem\Obs\ObsAdapter;
 
 /**
@@ -62,6 +63,7 @@ final class ObsAdapterTest extends FilesystemAdapterTestCase
     /**
      * @test
      */
+    #[Test]
     public function fetching_unknown_mime_type_of_a_file(): void
     {
         $this->adapter()

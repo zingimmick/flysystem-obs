@@ -15,6 +15,7 @@ use League\Flysystem\Visibility;
 use Obs\Internal\Common\Model;
 use Obs\ObsClient;
 use Obs\ObsException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Zing\Flysystem\Obs\ObsAdapter;
 
 /**
@@ -524,16 +525,6 @@ final class MockAdapterTest extends TestCase
         $this->assertSame('write', $this->obsAdapter->read('file.txt'));
     }
 
-    /**
-     * @return \Iterator<string[]>
-     */
-    public static function provideWriteStreamWithVisibilityCases(): \Iterator
-    {
-        yield [Visibility::PUBLIC];
-
-        yield [Visibility::PRIVATE];
-    }
-
     private function mockGetVisibility(string $path, string $visibility): void
     {
         $model = new Model([
@@ -591,6 +582,7 @@ final class MockAdapterTest extends TestCase
     /**
      * @dataProvider provideWriteStreamWithVisibilityCases
      */
+    #[DataProvider('provideWriteStreamWithVisibilityCases')]
     public function testWriteStreamWithVisibility(string $visibility): void
     {
         $contents = $this->streamForResource('write');
@@ -600,6 +592,16 @@ final class MockAdapterTest extends TestCase
         ]));
         $this->mockGetVisibility('file.txt', $visibility);
         $this->assertSame($visibility, $this->obsAdapter->visibility('file.txt')['visibility']);
+    }
+
+    /**
+     * @return \Iterator<string[]>
+     */
+    public static function provideWriteStreamWithVisibilityCases(): \Iterator
+    {
+        yield [Visibility::PUBLIC];
+
+        yield [Visibility::PRIVATE];
     }
 
     public function testWriteStreamWithExpires(): void
