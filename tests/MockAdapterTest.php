@@ -15,6 +15,7 @@ use League\Flysystem\Visibility;
 use Obs\Internal\Common\Model;
 use Obs\ObsClient;
 use Obs\ObsException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Zing\Flysystem\Obs\ObsAdapter;
 
 /**
@@ -581,6 +582,7 @@ final class MockAdapterTest extends TestCase
     /**
      * @dataProvider provideWriteStreamWithVisibilityCases
      */
+    #[DataProvider('provideWriteStreamWithVisibilityCases')]
     public function testWriteStreamWithVisibility(string $visibility): void
     {
         $contents = $this->streamForResource('write');

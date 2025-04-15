@@ -10,6 +10,7 @@ use League\Flysystem\FileAttributes;
 use League\Flysystem\StorageAttributes;
 use League\Flysystem\Visibility;
 use Obs\ObsClient;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Zing\Flysystem\Obs\ObsAdapter;
 
 class ValidAdapterTest extends TestCase
@@ -150,6 +151,7 @@ class ValidAdapterTest extends TestCase
     /**
      * @dataProvider provideWriteStreamWithVisibilityCases
      */
+    #[DataProvider('provideWriteStreamWithVisibilityCases')]
     public function testWriteStreamWithVisibility(string $visibility): void
     {
         $this->obsAdapter->writeStream('fixture/file.txt', $this->streamForResource('write'), new Config([
