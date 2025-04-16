@@ -9,24 +9,12 @@ use Obs\ObsClient;
 
 class PortableVisibilityConverter implements VisibilityConverter
 {
-    /**
-     * @var string
-     */
     private const PUBLIC_GRANTEE_URI = 'http://acs.amazonaws.com/groups/global/AllUsers';
 
-    /**
-     * @var string
-     */
     private const PUBLIC_GRANTS_PERMISSION = 'READ';
 
-    /**
-     * @var string
-     */
     private const PUBLIC_ACL = ObsClient::AclPublicRead;
 
-    /**
-     * @var string
-     */
     private const PRIVATE_ACL = ObsClient::AclPrivate;
 
     public function __construct(

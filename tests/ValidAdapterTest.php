@@ -148,16 +148,6 @@ class ValidAdapterTest extends TestCase
     }
 
     /**
-     * @return \Iterator<string[]>
-     */
-    public static function provideWriteStreamWithVisibilityCases(): \Iterator
-    {
-        yield [Visibility::PUBLIC];
-
-        yield [Visibility::PRIVATE];
-    }
-
-    /**
      * @dataProvider provideWriteStreamWithVisibilityCases
      */
     public function testWriteStreamWithVisibility(string $visibility): void
@@ -166,6 +156,16 @@ class ValidAdapterTest extends TestCase
             'visibility' => $visibility,
         ]));
         $this->assertSame($visibility, $this->obsAdapter->visibility('fixture/file.txt')['visibility']);
+    }
+
+    /**
+     * @return \Iterator<string[]>
+     */
+    public static function provideWriteStreamWithVisibilityCases(): \Iterator
+    {
+        yield [Visibility::PUBLIC];
+
+        yield [Visibility::PRIVATE];
     }
 
     public function testWriteStreamWithExpires(): void

@@ -524,16 +524,6 @@ final class MockAdapterTest extends TestCase
         $this->assertSame('write', $this->obsAdapter->read('file.txt'));
     }
 
-    /**
-     * @return \Iterator<string[]>
-     */
-    public static function provideWriteStreamWithVisibilityCases(): \Iterator
-    {
-        yield [Visibility::PUBLIC];
-
-        yield [Visibility::PRIVATE];
-    }
-
     private function mockGetVisibility(string $path, string $visibility): void
     {
         $model = new Model([
@@ -600,6 +590,16 @@ final class MockAdapterTest extends TestCase
         ]));
         $this->mockGetVisibility('file.txt', $visibility);
         $this->assertSame($visibility, $this->obsAdapter->visibility('file.txt')['visibility']);
+    }
+
+    /**
+     * @return \Iterator<string[]>
+     */
+    public static function provideWriteStreamWithVisibilityCases(): \Iterator
+    {
+        yield [Visibility::PUBLIC];
+
+        yield [Visibility::PRIVATE];
     }
 
     public function testWriteStreamWithExpires(): void

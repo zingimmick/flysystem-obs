@@ -15,7 +15,7 @@ use Zing\Flysystem\Obs\ObsAdapter;
  */
 final class ObsAdapterTest extends FilesystemAdapterTestCase
 {
-    protected static  function createFilesystemAdapter(): FilesystemAdapter
+    protected static function createFilesystemAdapter(): FilesystemAdapter
     {
         $config = [
             'key' => (string) getenv('OBS_KEY') ?: '',
