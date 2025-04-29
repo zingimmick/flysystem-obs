@@ -263,7 +263,7 @@ class ValidAdapterTest extends TestCase
     {
         $this->assertSame(
             'read-test',
-            file_get_contents($this->obsAdapter->getTemporaryUrl('fixture/read.txt', 10, []))
+            file_get_contents($this->obsAdapter->getTemporaryUrl('fixture/read.txt', 60, []))
         );
     }
 
@@ -276,7 +276,7 @@ class ValidAdapterTest extends TestCase
 
         $this->obsAdapter->write('fixture/image.png', $contents, new Config());
 
-        $info = getimagesize($this->obsAdapter->getTemporaryUrl('fixture/image.png', 10, [
+        $info = getimagesize($this->obsAdapter->getTemporaryUrl('fixture/image.png', 60, [
             'x-image-process' => 'image/crop,w_200,h_100',
         ]));
         $this->assertNotFalse($info);
