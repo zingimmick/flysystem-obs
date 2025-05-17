@@ -7,7 +7,6 @@ namespace Zing\Flysystem\Obs\Tests;
 use League\Flysystem\Config;
 use League\Flysystem\DirectoryAttributes;
 use League\Flysystem\FileAttributes;
-use League\Flysystem\StorageAttributes;
 use League\Flysystem\Visibility;
 use Obs\ObsClient;
 use Zing\Flysystem\Obs\ObsAdapter;
