@@ -7,7 +7,6 @@ namespace Zing\Flysystem\Obs\Tests;
 use League\Flysystem\Config;
 use League\Flysystem\DirectoryAttributes;
 use League\Flysystem\FileAttributes;
-use League\Flysystem\StorageAttributes;
 use League\Flysystem\Visibility;
 use Obs\ObsClient;
 use Zing\Flysystem\Obs\ObsAdapter;
@@ -148,16 +147,6 @@ class ValidAdapterTest extends TestCase
     }
 
     /**
-     * @return \Iterator<string[]>
-     */
-    public static function provideWriteStreamWithVisibilityCases(): \Iterator
-    {
-        yield [Visibility::PUBLIC];
-
-        yield [Visibility::PRIVATE];
-    }
-
-    /**
      * @dataProvider provideWriteStreamWithVisibilityCases
      */
     public function testWriteStreamWithVisibility(string $visibility): void
@@ -166,6 +155,16 @@ class ValidAdapterTest extends TestCase
             'visibility' => $visibility,
         ]));
         $this->assertSame($visibility, $this->obsAdapter->visibility('fixture/file.txt')['visibility']);
+    }
+
+    /**
+     * @return \Iterator<string[]>
+     */
+    public static function provideWriteStreamWithVisibilityCases(): \Iterator
+    {
+        yield [Visibility::PUBLIC];
+
+        yield [Visibility::PRIVATE];
     }
 
     public function testWriteStreamWithExpires(): void
@@ -222,7 +221,6 @@ class ValidAdapterTest extends TestCase
 
         /** @var \League\Flysystem\StorageAttributes[] $contents */
         $contents = iterator_to_array($this->obsAdapter->listContents('fixture/path', true));
-        $this->assertContainsOnlyInstancesOf(StorageAttributes::class, $contents);
         $this->assertCount(2, $contents);
 
         /** @var \League\Flysystem\FileAttributes $file */

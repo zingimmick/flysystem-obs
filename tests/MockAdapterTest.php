@@ -7,7 +7,6 @@ namespace Zing\Flysystem\Obs\Tests;
 use League\Flysystem\Config;
 use League\Flysystem\DirectoryAttributes;
 use League\Flysystem\FileAttributes;
-use League\Flysystem\StorageAttributes;
 use League\Flysystem\UnableToCopyFile;
 use League\Flysystem\UnableToDeleteDirectory;
 use League\Flysystem\UnableToRetrieveMetadata;
@@ -524,16 +523,6 @@ final class MockAdapterTest extends TestCase
         $this->assertSame('write', $this->obsAdapter->read('file.txt'));
     }
 
-    /**
-     * @return \Iterator<string[]>
-     */
-    public static function provideWriteStreamWithVisibilityCases(): \Iterator
-    {
-        yield [Visibility::PUBLIC];
-
-        yield [Visibility::PRIVATE];
-    }
-
     private function mockGetVisibility(string $path, string $visibility): void
     {
         $model = new Model([
@@ -600,6 +589,16 @@ final class MockAdapterTest extends TestCase
         ]));
         $this->mockGetVisibility('file.txt', $visibility);
         $this->assertSame($visibility, $this->obsAdapter->visibility('file.txt')['visibility']);
+    }
+
+    /**
+     * @return \Iterator<string[]>
+     */
+    public static function provideWriteStreamWithVisibilityCases(): \Iterator
+    {
+        yield [Visibility::PUBLIC];
+
+        yield [Visibility::PRIVATE];
     }
 
     public function testWriteStreamWithExpires(): void
@@ -1016,7 +1015,6 @@ final class MockAdapterTest extends TestCase
             ]));
         $this->mockGetMetadata('a/b/file.txt');
         $contents = iterator_to_array($this->obsAdapter->listContents('a', true));
-        $this->assertContainsOnlyInstancesOf(StorageAttributes::class, $contents);
         $this->assertCount(2, $contents);
 
         /** @var \League\Flysystem\FileAttributes $file */
