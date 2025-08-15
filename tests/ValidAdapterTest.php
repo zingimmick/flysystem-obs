@@ -71,7 +71,7 @@ class ValidAdapterTest extends TestCase
     protected function tearDown(): void
     {
         parent::tearDown();
-
+if ((string) getenv('MOCK') === 'false') 
         $this->obsAdapter->deleteDirectory('fixture');
     }
 
