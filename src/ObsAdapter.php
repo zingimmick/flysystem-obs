@@ -220,7 +220,7 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
             foreach (array_chunk($keys, 1000) as $items) {
                 $this->obsClient->deleteObjects([
                     'Bucket' => $this->bucket,
-                    'Objects' => array_map(static fn ($key): array => [
+                    'Objects' => array_map(static fn (?string $key): array => [
                         'Key' => $key,
                     ], $items),
                 ]);

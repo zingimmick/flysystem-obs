@@ -55,8 +55,10 @@ final class ObsAdapterTest extends FilesystemAdapterTestCase
     {
         parent::tearDown();
 
-        $adapter = $this->adapter();
-        $adapter->deleteDirectory('/');
+        if ((string) getenv('MOCK') === 'false') {
+            $adapter = $this->adapter();
+            $adapter->deleteDirectory('/');
+        }
     }
 
     /**

@@ -72,7 +72,9 @@ class ValidAdapterTest extends TestCase
     {
         parent::tearDown();
 
-        $this->obsAdapter->deleteDirectory('fixture');
+        if ((string) getenv('MOCK') === 'false') {
+            $this->obsAdapter->deleteDirectory('fixture');
+        }
     }
 
     public function testCopy(): void
