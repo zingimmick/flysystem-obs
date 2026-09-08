@@ -26,7 +26,7 @@
         "php": "^8.0",
         "ext-json": "*",
         "league/flysystem": "^3.10",
-        "zing/esdk-obs-php": "^3.19"
+        "zing/esdk-obs-php": "^3.21"
     },
     "require-dev": {
         "league/flysystem-adapter-test-utilities": "^3.7",
