@@ -375,9 +375,7 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
      */
     private function mapObjectMetadata(array $metadata, ?string $path = null): StorageAttributes
     {
-        if ($path === null){
-            $path = $this->pathPrefixer->stripPrefix((string) ($metadata['Key'] ?? $metadata['Prefix']));
-        }
+        $path ??= $this->pathPrefixer->stripPrefix((string) ($metadata['Key'] ?? $metadata['Prefix']));
 
         if (str_ends_with($path, '/')) {
             return new DirectoryAttributes(rtrim($path, '/'));
