@@ -76,7 +76,7 @@ class ObsAdapter implements FilesystemAdapter, PublicUrlGenerator, ChecksumProvi
         ?VisibilityConverter $visibility = null,
         ?MimeTypeDetector $mimeTypeDetector = null,
         /**
-         * @phpstan-var array{url?: string, temporary_url?: string, endpoint?: string, bucket_endpoint?: bool}
+         * @var array{url?: string, temporary_url?: string, endpoint?: string, bucket_endpoint?: bool}
          */
         protected array $options = []
     ) {
