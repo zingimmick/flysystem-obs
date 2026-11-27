@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 use Rector\Config\RectorConfig;
-use Rector\Naming\Rector\Assign\RenameVariableToMatchMethodCallReturnTypeRector;
-use Rector\Naming\Rector\ClassMethod\RenameParamToMatchTypeRector;
 use Rector\PHPUnit\CodeQuality\Rector\ClassMethod\ReplaceTestAnnotationWithPrefixedFunctionRector;
 use Rector\PHPUnit\Set\PHPUnitSetList;
 use Rector\Privatization\Rector\Class_\FinalizeTestCaseClassRector;
@@ -18,8 +16,6 @@ return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->phpstanConfig(__DIR__ . '/phpstan.neon');
     $rectorConfig->skip(
         [
-            RenameVariableToMatchMethodCallReturnTypeRector::class,
-            RenameParamToMatchTypeRector::class,
             FinalizeTestCaseClassRector::class,
             PrivatizeLocalGetterToPropertyRector::class,
             ReplaceTestAnnotationWithPrefixedFunctionRector::class => [__DIR__ . '/tests/ObsAdapterTest.php'],
