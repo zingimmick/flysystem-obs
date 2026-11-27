@@ -18,8 +18,6 @@ return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->phpstanConfig(__DIR__ . '/phpstan.neon');
     $rectorConfig->skip(
         [
-            RenameVariableToMatchMethodCallReturnTypeRector::class,
-            RenameParamToMatchTypeRector::class,
             FinalizeTestCaseClassRector::class,
             PrivatizeLocalGetterToPropertyRector::class,
             ReplaceTestAnnotationWithPrefixedFunctionRector::class => [__DIR__ . '/tests/ObsAdapterTest.php'],
